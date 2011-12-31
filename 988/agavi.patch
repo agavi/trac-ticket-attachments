@@ -1,0 +1,11 @@
+--- ./filter/AgaviExecutionFilter.class.php	2009-01-19 02:57:41.000000000 +0600
++++ ./filter/AgaviExecutionFilter.class.php.patched	2009-01-19 03:14:58.000000000 +0600
+@@ -161,7 +161,7 @@
+ 		foreach($groups as $group) {
+ 			$group += array('name' => null, 'source' => null, 'namespace' => null);
+ 			$val = $this->getVariable($group['name'], $group['source'], $group['namespace'], $container);
+-			if($val === null) {
++			if($val === null || $val === FALSE) {
+ 				$val = "0";
+ 			} elseif(is_object($val) && is_callable(array($val, '__toString'))) {
+ 				$val = $val->__toString();

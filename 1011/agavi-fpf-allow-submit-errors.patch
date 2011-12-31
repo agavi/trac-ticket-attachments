@@ -1,0 +1,19 @@
+Index: src/filter/AgaviFormPopulationFilter.class.php
+===================================================================
+--- src/filter/AgaviFormPopulationFilter.class.php	(revision 3670)
++++ src/filter/AgaviFormPopulationFilter.class.php	(working copy)
+@@ -293,7 +293,7 @@
+ 			$remember = array();
+ 
+ 			// build the XPath query
+-			$query = sprintf('descendant::%1$stextarea[@name] | descendant::%1$sselect[@name] | 
+descendant::%1$sinput[@name and (not(@type) or @type="text" or (@type="checkbox" and not(contains(@name, "[]"))) or 
+(@type="checkbox" and contains(@name, "[]") and @value) or @type="radio" or @type="password" or @type="file"', 
+$this->xmlnsPrefix);
++			$query = sprintf('descendant::%1$stextarea[@name] | descendant::%1$sselect[@name] | 
+descendant::%1$sinput[@name and (not(@type) or @type="text" or (@type="checkbox" and not(contains(@name, "[]"))) or 
+(@type="checkbox" and contains(@name, "[]") and @value) or @type="radio" or @type="password" or @type="file" or 
+@type="submit"', $this->xmlnsPrefix);
+ 			if($cfg['include_hidden_inputs']) {
+ 				$query .= ' or @type="hidden"';
+ 			}

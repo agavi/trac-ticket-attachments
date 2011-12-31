@@ -1,0 +1,65 @@
+Index: config/AgaviReturnArrayConfigHandler.class.php
+===================================================================
+--- config/AgaviReturnArrayConfigHandler.class.php
++++ config/AgaviReturnArrayConfigHandler.class.php
+@@ -73,7 +73,7 @@
+ 	 */
+ 	protected function convertToArray(AgaviXmlConfigDomElement $item, $topLevel = false)
+ 	{
+-		$idAttribute = $this->getParameter('id_attribute', 'name');
++		$idAttribute = (array)$this->getParameter('id_attribute', 'name');
+ 		$valueKey = $this->getParameter('value_key', 'value');
+ 		$forceArrayValues = $this->getParameter('force_array_values', false);
+ 		$attributePrefix = $this->getParameter('attribute_prefix', '');
+@@ -85,12 +85,17 @@
+ 
+ 		$attribs = $item->getAttributes();
+ 		$numAttribs = count($attribs);
+-		if($idAttribute && $item->hasAttribute($idAttribute)) {
+-			$numAttribs--;
++		$matchedIdAttribute = null;
++		foreach($idAttribute as $idAttr) {
++			if($item->hasAttribute($idAttr)) {
++				$matchedIdAttribute = $idAttr;
++				$numAttribs--;
++				break;
++			}
+ 		}
+ 		
+ 		foreach($item->getAttributes() as $name => $value) {
+-			if(($topLevel && in_array($name, array('context', 'environment'))) || $name == $idAttribute) {
++			if(($topLevel && in_array($name, array('context', 'environment'))) || $name == $matchedIdAttribute) {
+ 				continue;
+ 			}
+ 
+@@ -130,10 +135,17 @@
+ 				$dupes[] = $name;
+ 			}
+ 			foreach($children as $key => $child) {
+-				$hasId = ($idAttribute && $child->hasAttribute($idAttribute));
++				$matchedIdAttribute = null;
++				foreach($idAttribute as $idAttr) {
++					if($child->hasAttribute($idAttr)) {
++						$matchedIdAttribute = $idAttr;
++						break;
++					}
++				}
++				
+ 				$isDupe = in_array($child->getName(), $dupes);
+ 				$hasParent = $child->getName() == $singularParentName && $item->getName() != $singularParentName;
+-				if(($hasId || $isDupe) && !$hasParent) {
++				if(($matchedIdAttribute || $isDupe) && !$hasParent) {
+ 					// it's one of multiple tags in this level without the respective plural form as the parent node
+ 					if(!isset($data[$idx = AgaviInflector::pluralize($child->getName())])) {
+ 						$data[$idx] = array();
+@@ -144,8 +156,8 @@
+ 					$to =& $data;
+ 				}
+ 				
+-				if($hasId) {
+-					$key = $child->getAttribute($idAttribute);
++				if($matchedIdAttribute) {
++					$key = $child->getAttribute($matchedIdAttribute);
+ 					if($literalize) {
+ 						// no literalize, just constants!
+ 						$key = AgaviToolkit::expandDirectives($key);

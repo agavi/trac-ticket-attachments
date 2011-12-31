@@ -1,0 +1,44 @@
+Index: src/config/AgaviConfigHandlersConfigHandler.class.php
+===================================================================
+--- src/config/AgaviConfigHandlersConfigHandler.class.php	(revision 2666)
++++ src/config/AgaviConfigHandlersConfigHandler.class.php	(working copy)
+@@ -31,7 +31,7 @@
+  */
+ class AgaviConfigHandlersConfigHandler extends AgaviXmlConfigHandler
+ {
+-	const NAMESPACE = 'http://agavi.org/agavi/config/parts/config_handlers/1.0';
++	const CONFIG_HANDLER_NAMESPACE = 'http://agavi.org/agavi/config/parts/config_handlers/1.0';
+ 	
+ 	/**
+ 	 * Execute this configuration handler.
+@@ -53,7 +53,7 @@
+ 	public function execute(AgaviXmlConfigDomDocument $document)
+ 	{
+ 		// set up our default namespace
+-		$document->setDefaultNamespace(self::NAMESPACE, 'config_handlers');
++		$document->setDefaultNamespace(self::CONFIG_HANDLER_NAMESPACE, 'config_handlers');
+ 		
+ 		// init our data arrays
+ 		$handlers = array();
+Index: src/config/AgaviFactoryConfigHandler.class.php
+===================================================================
+--- src/config/AgaviFactoryConfigHandler.class.php	(revision 2666)
++++ src/config/AgaviFactoryConfigHandler.class.php	(working copy)
+@@ -32,7 +32,7 @@
+  */
+ class AgaviFactoryConfigHandler extends AgaviXmlConfigHandler
+ {
+-	const NAMESPACE = 'http://agavi.org/agavi/config/parts/factories/1.0';
++	const FACTORIES_NAMESPACE = 'http://agavi.org/agavi/config/parts/factories/1.0';
+ 	
+ 	/**
+ 	 * Execute this configuration handler.
+@@ -52,7 +52,7 @@
+ 	public function execute(AgaviXmlConfigDomDocument $document)
+ 	{
+ 		// set up our default namespace
+-		$document->setDefaultNamespace(self::NAMESPACE, 'factories');
++		$document->setDefaultNamespace(self::FACTORIES_NAMESPACE, 'factories');
+ 		
+ 		$config = $document->documentURI;
+ 		$data = array();

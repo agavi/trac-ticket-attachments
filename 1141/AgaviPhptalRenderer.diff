@@ -1,0 +1,33 @@
+Index: renderer/AgaviPhptalRenderer.class.php
+===================================================================
+--- renderer/AgaviPhptalRenderer.class.php	(revision 4236)
++++ renderer/AgaviPhptalRenderer.class.php	(working copy)
+@@ -80,16 +80,15 @@
+ 	protected function getEngine()
+ 	{
+ 		if($this->phptal === null) {
+-			if(!defined('PHPTAL_PHP_CODE_DESTINATION')) {
+-				define('PHPTAL_PHP_CODE_DESTINATION', AgaviConfig::get('core.cache_dir') . DIRECTORY_SEPARATOR . AgaviPhptalRenderer::COMPILE_DIR . DIRECTORY_SEPARATOR . AgaviPhptalRenderer::COMPILE_SUBDIR . DIRECTORY_SEPARATOR);
+-				AgaviToolkit::mkdir(PHPTAL_PHP_CODE_DESTINATION, fileperms(AgaviConfig::get('core.cache_dir')), true);
+-			}
+-			
+ 			if(!class_exists('PHPTAL')) {
+ 				require('PHPTAL.php');
+ 			}
+-			
++
+ 			$this->phptal = new PHPTAL();
++
++			$dest_dir = AgaviConfig::get('core.cache_dir') . DIRECTORY_SEPARATOR . AgaviPhptalRenderer::COMPILE_DIR . DIRECTORY_SEPARATOR . AgaviPhptalRenderer::COMPILE_SUBDIR . DIRECTORY_SEPARATOR;
++			AgaviToolkit::mkdir($dest_dir, fileperms(AgaviConfig::get('core.cache_dir')), true);
++			$this->phptal->setPhpCodeDestination($dest_dir);
+ 		}
+ 		return $this->phptal;
+ 	}
+@@ -137,4 +136,4 @@
+ 	}
+ }
+ 
+-?>
+\ No newline at end of file
++?>

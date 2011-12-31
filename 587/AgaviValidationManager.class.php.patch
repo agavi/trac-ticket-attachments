@@ -1,0 +1,17 @@
+Index: validator/AgaviValidationManager.class.php
+===================================================================
+--- validator/AgaviValidationManager.class.php	(revision 2122)
++++ validator/AgaviValidationManager.class.php	(working copy)
+@@ -828,8 +828,11 @@
+ 	 */
+ 	public function setError($name, $message)
+ 	{
++		if (!is_array($name)) {
++			$name = array($name);
++		}
+ 		$incident = new AgaviValidationIncident(null, AgaviValidator::ERROR);
+-		$incident->addError(new AgaviValidationError($message, null, array($name)));
++		$incident->addError(new AgaviValidationError($message, null, $name));
+ 		$this->addIncident($incident);
+ 	}
+ 

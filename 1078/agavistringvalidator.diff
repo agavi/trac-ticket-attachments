@@ -1,0 +1,29 @@
+Index: AgaviStringValidator.class.php
+===================================================================
+--- AgaviStringValidator.class.php	(revision 3990)
++++ AgaviStringValidator.class.php	(working copy)
+@@ -23,6 +23,9 @@
+  *   'max'       string should be at most this long
+  *   'max_error' error message when string is longer then 'max'
+  *   'trim'      trim whitespace before length checks
++ *   'modify_functions' 
++                 function names (single or array) to be applied to the
++ *               value before exporting e.g. "strtoupper"
+  *
+  * @package    agavi
+  * @subpackage validator
+@@ -86,6 +89,14 @@
+ 			return false;
+ 		}
+ 
++		if($this->hasParameter('modify_functions')) {
++			$functions = $this->getParameter('modify_functions');
++			$functions = is_array($functions) ? $functions : array($functions);
++			foreach($functions as $f) {
++				$originalValue = $f($originalValue);
++			}
++		}
++
+ 		$this->export($originalValue);
+ 
+ 		return true;

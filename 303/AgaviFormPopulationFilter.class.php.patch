@@ -1,0 +1,69 @@
+Index: filter/AgaviFormPopulationFilter.class.php
+===================================================================
+--- filter/AgaviFormPopulationFilter.class.php	(revision 2121)
++++ filter/AgaviFormPopulationFilter.class.php	(working copy)
+@@ -241,7 +241,13 @@
+ 		} else {
+ 			$forms = $this->xpath->query('//' . $this->ns . 'form[@action]');
+ 		}
++
++		// an array of all validation incidents; errors inserted for fields or multiple fields will be removed in here
++		$allIncidents = $vm->getIncidents();
++		
+ 		foreach($forms as $form) {
++			// Create an array for all the incidents belonging to this form
++			$formIncidents = array();
+ 			if($populate instanceof AgaviParameterHolder) {
+ 				$action = preg_replace('/#.*$/', '', trim($form->getAttribute('action')));
+ 				if(!(
+@@ -268,9 +274,6 @@
+ 
+ 			// our array for remembering foo[] field's indices
+ 			$remember = array();
+-
+-			// an array of all validation incidents; errors inserted for fields or multiple fields will be removed in here
+-			$allIncidents = $vm->getIncidents();
+ 			
+ 			// build the XPath query
+ 			$query = 'descendant::' . $this->ns . 'textarea[@name] | descendant::' . $this->ns . 'select[@name] | descendant::' . $this->ns . 'input[@name and (not(@type) or @type="text" or (@type="checkbox" and not(contains(@name, "[]"))) or (@type="checkbox" and contains(@name, "[]") and @value) or @type="radio" or @type="password" or @type="file"';
+@@ -381,11 +384,11 @@
+ 					}
+ 					// 1) insert error messages that are specific to this field
+ 					if(!$this->insertErrorMessages($element, $fieldErrorMessageRules, $fieldIncidents)) {
+-						$allIncidents = array_merge($allIncidents, $fieldIncidents);
++						$formIncidents = array_merge($formIncidents, $fieldIncidents);
+ 					}
+ 					// 2) insert error messages that belong to multiple fields (including this one), if that message was not inserted before
+ 					if(!$this->insertErrorMessages($element, $multiFieldErrorMessageRules, $multiFieldIncidents)) {
+-						$allIncidents = array_merge($allIncidents, $multiFieldIncidents);
++						$formIncidents = array_merge($formIncidents, $multiFieldIncidents);
+ 					}
+ 				}
+ 
+@@ -468,12 +471,11 @@
+ 						$element->appendChild($this->doc->createTextNode($value));
+ 					}
+ 				}
+-
+ 			}
+ 
+ 			// now output the remaining incidents
+-			if(!$this->insertErrorMessages($form, $errorMessageRules, $allIncidents)) {
+-				$rq->setAttribute('lolz', $allIncidents, 'org.agavi.filter.FormPopulationFilter');
++			if(!$this->insertErrorMessages($form, $errorMessageRules, $formIncidents)) {
++				$rq->setAttribute('lolz', $formIncidents, 'org.agavi.filter.FormPopulationFilter');
+ 			}
+ 		}
+ 		if($xhtml) {
+@@ -578,6 +580,11 @@
+ 	 */
+ 	protected function insertErrorMessages(DOMElement $element, array $rules, array $incidents)
+ 	{
++		// Check if we have any incidents to process
++		if (empty($incidents)) {
++			return true;
++		}
++		
+ 		$errorMessages = array();
+ 		foreach($incidents as $incident) {
+ 			foreach($incident->getErrors() as $error) {

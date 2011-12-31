@@ -1,0 +1,11 @@
+Index: src/build/templates/pub/web/dot.htaccess.tmpl
+===================================================================
+--- src/build/templates/pub/web/dot.htaccess.tmpl	(revision 2965)
++++ src/build/templates/pub/web/dot.htaccess.tmpl	(working copy)
+@@ -1,5 +1,5 @@
+ DirectoryIndex index.php
+-Options -MultiViews -Indexes
++Options -MultiViews -Indexes FollowSymLinks
+ 
+ <IfDefine APACHE2>
+ 	AcceptPathInfo On

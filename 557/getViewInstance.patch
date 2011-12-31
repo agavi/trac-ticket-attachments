@@ -1,0 +1,68 @@
+Index: controller/AgaviExecutionContainer.class.php
+===================================================================
+--- controller/AgaviExecutionContainer.class.php	(revision 2060)
++++ controller/AgaviExecutionContainer.class.php	(working copy)
+@@ -69,8 +69,13 @@
+ 	 * @var        AgaviAction The Action instance that belongs to this container.
+ 	 */
+ 	protected $actionInstance = null;
+-	
++
+ 	/**
++	 * @var        AgaviAction The View instance that belongs to this container.
++	 */
++	protected $viewInstance = null;
++
++	/**
+ 	 * @var        string The name of the Action's Module.
+ 	 */
+ 	protected $moduleName = null;
+@@ -504,7 +509,35 @@
+ 	{
+ 		return $this->actionInstance;
+ 	}
++
++
++	/**
++	 * Retrieve this container's action instance.
++	 *
++	 * @return     AgaviAction An action implementation instance.
++	 *
++	 * @author     Ross Lawley <ross.lawley@gmail.com>
++	 * @since      0.11.0
++	 */
++	public function setViewInstance($viewInstance)
++	{
++		return $this->viewInstance = $viewInstance;
++	}
++
++	/**
++	 * Retrieve this container's action instance.
++	 *
++	 * @return     AgaviAction An action implementation instance.
++	 *
++	 * @author     Ross Lawley <ross.lawley@gmail.com>
++	 * @since      0.11.0
++	 */
++	public function getViewInstance()
++	{
++		return $this->viewInstance;
++	}
+ 	
++
+ 	/**
+ 	 * Retrieve this container's module name.
+ 	 *
+Index: filter/AgaviExecutionFilter.class.php
+===================================================================
+--- filter/AgaviExecutionFilter.class.php	(revision 2060)
++++ filter/AgaviExecutionFilter.class.php	(working copy)
+@@ -298,6 +298,8 @@
+ 
+ 			// get the view instance
+ 			$viewInstance = $controller->createViewInstance($actionCache['view_module'], $actionCache['view_name']);
++			// Set the View Instance in the container
++			$container->setViewInstance($viewInstance);
+ 
+ 			// initialize the view
+ 			$viewInstance->initialize($container);

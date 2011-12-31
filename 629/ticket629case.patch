@@ -1,0 +1,49 @@
+Index: samples/app/config/output_types.xml
+===================================================================
+--- samples/app/config/output_types.xml	(revision 2203)
++++ samples/app/config/output_types.xml	(working copy)
+@@ -56,6 +56,12 @@
+ 					<parameter name="Content-Type">application/xhtml+xml; charset=UTF-8</parameter>
+ 				</parameter>
+ 			</output_type>
++			
++			<output_type name="text">
++				<parameter name="http_headers">
++					<parameter name="Content-Type">text/plain</parameter>
++				</parameter>
++			</output_type>
+ 
+ 		</output_types>
+ 	</configuration>
+Index: samples/app/config/routing.xml
+===================================================================
+--- samples/app/config/routing.xml	(revision 2203)
++++ samples/app/config/routing.xml	(working copy)
+@@ -12,7 +12,9 @@
+ 			
+ 			<!-- If the HTTP Accept: header contains "application/xhtml+xml", set the output type to "xhtml". Look at output_types.xml for the declaration of that output type. Execution will not stop if this route matches. -->
+ 			<route pattern="application/xhtml+xml" source="_SERVER[HTTP_ACCEPT]" output_type="xhtml" stop="false" />
+-		
++			
++			<route pattern=".txt$" stop="false" cut="true" output_type="text" />
++			
+ 			<route name="disabled" pattern="^/disabled" module="Disabled" action="Index" />
+ 			
+ 			<route name="login" pattern="^/login" module="%actions.login_module%" action="%actions.login_action%">
+Index: samples/app/modules/Default/views/LoginInputView.class.php
+===================================================================
+--- samples/app/modules/Default/views/LoginInputView.class.php	(revision 2203)
++++ samples/app/modules/Default/views/LoginInputView.class.php	(working copy)
+@@ -36,6 +36,11 @@
+ 			$this->getContext()->getUser()->removeAttribute('redirect', 'org.agavi.SampleApp.login');
+ 		}
+ 	}
++	
++	public function executeText(AgaviRequestDataHolder $rd)
++	{
++		return $this->createForwardContainer('Default', 'Index', null, 'html');
++	}
+ }
+ 
+ ?>
+\ No newline at end of file

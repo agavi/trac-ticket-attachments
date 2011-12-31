@@ -1,0 +1,76 @@
+Index: samples/app/config/global_filters.xml
+===================================================================
+--- samples/app/config/global_filters.xml	(revision 3783)
++++ samples/app/config/global_filters.xml	(working copy)
+@@ -12,16 +12,12 @@
+ 					<parameter>html</parameter>
+ 				</parameter>
+ 				<!-- for all field error messages. errors that yield no match and those that have no corresponding field are inserted using rules defined in "error_messages". errors that belong to more than one field (e.g. date validator) can be handled using "multi_field_error_messages" -->
+-				<parameter name="field_error_messages">
+-					<!-- ${htmlnsPrefix} is either empty (for HTML) or something like "html:" for XHTML documents with xmlns="..." notation. Always use this, makes your code more bullet proof. XPath needs the namespaces when the document is namespaced -->
+-					<parameter name="parent::${htmlnsPrefix}dd">
+-						<!-- can be any of "before", "after" or "child" (to insert as prev, next sibling or last child) -->
+-						<parameter name="location">after</parameter>
+-						<!-- a container groups all errors for one element -->
+-						<parameter name="container"><![CDATA[<dd>${errorMessages}</dd>]]></parameter>
++				<parameter name="error_messages">
++					<parameter name="self::${htmlnsPrefix}form">
++						<parameter name="location">before</parameter>
++						<parameter name="container"><![CDATA[<div style="border:1px solid #F00">${errorMessages}</div>]]></parameter>
+ 						<parameter name="markup"><![CDATA[<p class="error">${errorMessage}</p>]]></parameter>
+ 					</parameter>
+-					<!-- you could have more rules above, e.g. ${htmlnsPrefix}input[@type="checkbox"]... to have a rule that only applies to checkbox elements. first match is used. -->
+ 				</parameter>
+ 			</filter>
+ 			
+Index: samples/app/modules/Default/actions/LoginAction.class.php
+===================================================================
+--- samples/app/modules/Default/actions/LoginAction.class.php	(revision 3783)
++++ samples/app/modules/Default/actions/LoginAction.class.php	(working copy)
+@@ -48,6 +48,11 @@
+ 	 * execute*() being present, e.g. for a "write" Request, validateWrite() will
+ 	 * be run even if there is no executeWrite() method.
+ 	 */
++	public function executeRead(AgaviRequestDataHolder $rd)
++	{
++		return 'Input';
++	}
++
+ 	public function executeWrite(AgaviRequestDataHolder $rd)
+ 	{
+ 		try {
+Index: samples/app/modules/Default/validate/Login.xml
+===================================================================
+--- samples/app/modules/Default/validate/Login.xml	(revision 3783)
++++ samples/app/modules/Default/validate/Login.xml	(working copy)
+@@ -12,7 +12,7 @@
+ 	<configuration>
+ 		<validators>
+ 
+-			<validator class="string" name="username_too_short" translation_domain="default.errors.Login">
++			<validator class="string" name="username_too_short" translation_domain="default.errors.Login" severity="silent">
+ 				<arguments>
+ 					<argument>username</argument>
+ 				</arguments>
+@@ -24,7 +24,7 @@
+ 				</parameters>
+ 			</validator>
+ 
+-			<validator class="string" name="password_non_existant" translation_domain="default.errors.Login">
++			<validator class="string" name="password_non_existant" translation_domain="default.errors.Login" severity="silent">
+ 				<arguments>
+ 					<argument>password</argument>
+ 				</arguments>
+Index: samples/app/modules/Default/views/LoginInputView.class.php
+===================================================================
+--- samples/app/modules/Default/views/LoginInputView.class.php	(revision 3783)
++++ samples/app/modules/Default/views/LoginInputView.class.php	(working copy)
+@@ -35,6 +35,8 @@
+ 			// but only if request method is "read", i.e. if the login form is served via GET!
+ 			$this->getContext()->getUser()->removeAttribute('redirect', 'org.agavi.SampleApp.login');
+ 		}
++		
++		$this->context->getRequest()->setAttribute('populate', true, 'org.agavi.filter.FormPopulationFilter');
+ 	}
+ }
+ 

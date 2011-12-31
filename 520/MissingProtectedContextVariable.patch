@@ -1,0 +1,19 @@
+Index: AgaviSoapControllerCallHandler.class.php
+===================================================================
+--- AgaviSoapControllerCallHandler.class.php	(revision 1917)
++++ AgaviSoapControllerCallHandler.class.php	(working copy)
+@@ -33,6 +33,7 @@
+ 	/**
+ 	 * @var        AgaviContext The context.
+ 	 */
++	protected $context = null;
+ 	
+ 	/**
+ 	 * Constructor. Expects the SoapController instance to use as the first arg.
+@@ -105,4 +106,4 @@
+ 	}
+ }
+ 
+-?>
+\ No newline at end of file
++?>

@@ -1,0 +1,21 @@
+--- src.old/validator/AgaviStringValidator.class.php	2008-04-03 17:13:10.000000000 +0200
++++ src/validator/AgaviStringValidator.class.php	2008-04-03 17:13:34.000000000 +0200
+@@ -22,6 +22,7 @@
+  *   'min_error' error message when string is shorter then 'min'
+  *   'max'       string should be at most this long
+  *   'max_error' error message when string is longer then 'max'
++ *   'trim'      trim whitespaces from string
+  *
+  * @package    agavi
+  * @subpackage validator
+@@ -54,6 +55,10 @@
+ 			$value = utf8_decode($value);
+ 		}
+ 		
++		if($this->getParameter('trim',false)) {
++			$value = trim($value);
++		}
++		
+ 		if($this->hasParameter('min') and strlen($value) < $this->getParameter('min')) {
+ 			$this->throwError('min');
+ 			return false;

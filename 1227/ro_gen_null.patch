@@ -1,0 +1,25 @@
+Index: app/modules/Default/templates/LoginInput.php
+===================================================================
+--- app/modules/Default/templates/LoginInput.php	(revision 4420)
++++ app/modules/Default/templates/LoginInput.php	(working copy)
+@@ -1,4 +1,4 @@
+-<form action="<?php echo $ro->gen('login'); ?>" method="post">
++<form id="loginform" action="<?php echo $ro->gen(null); ?>" method="post">
+ 	<dl>
+ 		<dt><label for="fe-username"><?php echo $tm->_('Username:', 'default.Login'); ?></label></dt>
+ 		<dd><input type="text" name="username" id="fe-username" /></dd>
+Index: app/modules/Default/views/LoginInputView.class.php
+===================================================================
+--- app/modules/Default/views/LoginInputView.class.php	(revision 4420)
++++ app/modules/Default/views/LoginInputView.class.php	(working copy)
+@@ -25,6 +25,10 @@
+ 		// our login form is displayed. so let's remove that cookie thing there
+ 		$this->getResponse()->setCookie('autologon[username]', false);
+ 		$this->getResponse()->setCookie('autologon[password]', false);
++
++		$populate = new AgaviParameterHolder();
++		$populate->setParameter('username', 'UserName');
++		$this->getContext()->getRequest()->setAttribute('populate', array('loginform' => $populate), 'org.agavi.filter.FormPopulationFilter');
+ 		
+ 		if($this->getContainer()->hasAttributeNamespace('org.agavi.controller.forwards.login')) {
+ 			// we were redirected to the login form by the controller because the requested action required security

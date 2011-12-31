@@ -1,0 +1,75 @@
+diff --git a/libs/agavi/validator/AgaviBaseFileValidator.class.php b/libs/agavi/validator/AgaviBaseFileValidator.class.php
+index e170ae0..8415cd2 100644
+--- a/libs/agavi/validator/AgaviBaseFileValidator.class.php
++++ b/libs/agavi/validator/AgaviBaseFileValidator.class.php
+@@ -33,6 +33,7 @@
+  * @subpackage validator
+  *
+  * @author     Dominik del Bondio <ddb@bitxtender.com>
++ * @author     Behrooz shabani <behrooz@rock.com>
+  * @copyright  Authors
+  * @copyright  The Agavi Project
+  *
+@@ -43,9 +44,15 @@
+ abstract class AgaviBaseFileValidator extends AgaviValidator
+ {
+ 	/**
++	 * @var        finfo to check mimetype if mime_type parameter exists
++	 */
++	protected static $finfo = null ;
++
++	/**
+ 	 * @see        AgaviValidator::initialize
+ 	 *
+ 	 * @author     Dominik del Bondio <ddb@bitxtender.com>
++	 * @author     Behrooz shabani <behrooz@rock.com>
+ 	 * @since      0.11.0
+ 	 */
+ 	public function initialize(AgaviContext $context, array $parameters = array(), array $arguments = array(), array $errors = array())
+@@ -55,6 +62,12 @@ abstract class AgaviBaseFileValidator extends AgaviValidator
+ 		}
+ 
+ 		parent::initialize($context, $parameters, $arguments, $errors);
++
++		if($this->hasParameter('mime_type') and is_null(self::$finfo)) {
++			if ( !extension_loaded('fileinfo') )
++				throw new AgaviValidatorException('Use of parameter "mime_type" requires the fileinfo extension.');
++			self::$finfo = new finfo ( ) ;
++		}
+ 	}
+ 
+ 	/**
+@@ -63,6 +76,7 @@ abstract class AgaviBaseFileValidator extends AgaviValidator
+ 	 * @return     bool The file is valid according to given parameters.
+ 	 * 
+ 	 * @author     Dominik del Bondio <ddb@bitxtender.com>
++	 * @author     Behrooz shabani <behrooz@rock.com>
+ 	 * @since      0.11.0
+ 	 */
+ 	protected function validate()
+@@ -89,7 +103,24 @@ abstract class AgaviBaseFileValidator extends AgaviValidator
+ 				$this->throwError('max_size');
+ 				return false;
+ 			}
+-			
++
++			if($this->hasParameter('mime_type')) {
++				// get mimetype of file
++				$type = self::$finfo->file ( $file->getTmpName ( ) );
++
++				$mime_type = $this->getParameter('mime_type') ;
++				// if parameter is a string use it as a pcre pattern
++				if(is_string ( $mime_type ) and !preg_match($mime_type, $type)) {
++					$this->throwError('mime_type');
++					return false ;
++				}
++				// if parameter is an array search for mimetype in it
++				elseif(is_array($mime_type) and !in_array($type, $mime_type)) {
++					$this->throwError('mime_type');
++					return false ;
++				}
++			}
++
+ 			if($this->hasParameter('extension')) {
+ 				$fileinfo = pathinfo($file->getName()) + array('extension' => '');
+ 				

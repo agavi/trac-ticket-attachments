@@ -1,0 +1,13 @@
+Index: /Users/sth/Sites/agavi-site/libs/agavi/build/agavi/script/agavi.php
+===================================================================
+--- /Users/sth/Sites/agavi-site/libs/agavi/build/agavi/script/agavi.php	(revision 4522)
++++ /Users/sth/Sites/agavi-site/libs/agavi/build/agavi/script/agavi.php	(working copy)
+@@ -29,6 +29,8 @@
+  * @version    $Id$
+  */
+ 
++set_include_path(get_include_path().':'.getcwd());
++
+ define('BUILD_DIRECTORY', realpath(dirname(__FILE__) . '/../..'));
+ define('START_DIRECTORY', getcwd());
+ define('MIN_PHING_VERSION', '2.4.0');

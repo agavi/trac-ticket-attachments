@@ -1,0 +1,18 @@
+Project base directory [E:\usr\www\SampleProject]:
+Project name [New Agavi Project]:
+Project prefix (used, for example, in the project base action) [Newagaviproject]:
+Default template extension [php]:
+Document-root relative path to the Agavi index.php script [/]: /SampleProject/pub/
+Space-separated list of modules to create for New Agavi Project [Default]: Default AModule ZModule
+Space-separated list of actions to create for Default:
+Space-separated list of actions to create for AModule: Action1
+Space-separated list of views to create for Action1 [Success]:
+Space-separated list of actions to create for ZModule: Action2
+Space-separated list of views to create for Action2 [Success]:
+Module for default system action [Default]: ZModule
+Action for default system action [Index]: Action2
+Module for error_404 system action [ZModule]: Default
+Module for unavailable system action [Default]:
+Module for module_disabled system action [Default]:
+Module for secure system action [Default]:
+Module for login system action [Default]:

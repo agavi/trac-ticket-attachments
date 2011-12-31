@@ -1,0 +1,269 @@
+Index: samples/app/models/Entities/User.php
+===================================================================
+--- samples/app/models/Entities/User.php	(revision 0)
++++ samples/app/models/Entities/User.php	(revision 0)
+@@ -0,0 +1,48 @@
++<?php
++
++namespace Entities;
++
++/** @Entity @Table(name="users") */
++class User
++{
++    /**
++     * @Id @Column(type="integer")
++     * @GeneratedValue(strategy="AUTO")
++     */
++    private $id;
++    /** @Column(type="string", length=50) */
++    private $name;
++    /**
++     * @OneToOne(targetEntity="Address", inversedBy="user")
++     * @JoinColumn(name="address_id", referencedColumnName="id")
++     */
++    private $address;
++
++    public function getId()
++    {
++        return $this->id;
++    }
++
++    public function getName()
++    {
++        return $this->name;
++    }
++
++    public function setName($name)
++    {
++        $this->name = $name;
++    }
++
++    public function getAddress()
++    {
++        return $this->address;
++    }
++
++    public function setAddress(Address $address)
++    {
++        if ($this->address !== $address) {
++            $this->address = $address;
++            $address->setUser($this);
++        }
++    }
++}
+\ No newline at end of file
+Index: samples/app/models/Entities/Address.php
+===================================================================
+--- samples/app/models/Entities/Address.php	(revision 0)
++++ samples/app/models/Entities/Address.php	(revision 0)
+@@ -0,0 +1,45 @@
++<?php
++
++namespace Entities;
++
++/** @Entity @Table(name="addresses") */
++class Address
++{
++    /**
++     * @Id @Column(type="integer")
++     * @GeneratedValue(strategy="AUTO")
++     */
++    private $id;
++    /** @Column(type="string", length=255) */
++    private $street;
++    /** @OneToOne(targetEntity="User", mappedBy="address") */
++    private $user;
++
++    public function getId()
++    {
++        return $this->id;
++    }
++
++    public function getStreet()
++    {
++        return $this->street;
++    }
++
++    public function setStreet($street)
++    {
++        $this->street = $street;
++    }
++
++    public function getUser()
++    {
++        return $this->user;
++    }
++
++    public function setUser(User $user)
++    {
++        if ($this->user !== $user) {
++            $this->user = $user;
++            $user->setAddress($this);
++        }
++    }
++}
+\ No newline at end of file
+Index: samples/app/config/settings.xml
+===================================================================
+--- samples/app/config/settings.xml	(revision 4760)
++++ samples/app/config/settings.xml	(working copy)
+@@ -42,7 +42,7 @@
+ 			<setting name="available">true</setting>
+ 			<setting name="debug">false</setting>
+ 			
+-			<setting name="use_database">false</setting>
++			<setting name="use_database">true</setting>
+ 			<setting name="use_logging">false</setting>
+ 			<setting name="use_security">true</setting>
+ 			<setting name="use_translation">true</setting>
+Index: samples/app/config/output_types.xml
+===================================================================
+--- samples/app/config/output_types.xml	(revision 4760)
++++ samples/app/config/output_types.xml	(working copy)
+@@ -72,7 +72,7 @@
+ 		</output_types>
+ 	</ae:configuration>
+ 
+-	<ae:configuration context="console">
++	<ae:configuration context="console.*">
+ 		<output_types default="text">
+ 
+ 			<output_type name="text" />
+Index: samples/app/config/databases.xml
+===================================================================
+--- samples/app/config/databases.xml	(revision 4760)
++++ samples/app/config/databases.xml	(working copy)
+@@ -4,16 +4,18 @@
+ 	<ae:configuration>
+ 		<databases default="pdo_mysql_main">
+ 			
+-			<database name="pdo_mysql_main" class="AgaviPdoDatabase">
+-				<ae:parameter name="dsn">mysql:host=localhost;dbname=agsmplapp</ae:parameter>
+-				<ae:parameter name="username">root</ae:parameter>
+-				<ae:parameter name="password"></ae:parameter>
++			<database name="pdo_mysql_main" class="AgaviDoctrine2ormDatabase">
++				<ae:parameter name="connection">
++					<ae:parameter name="driver">pdo_mysql</ae:parameter>
++					<ae:parameter name="host">127.0.0.1</ae:parameter>
++					<ae:parameter name="user">root</ae:parameter>
++					<ae:parameter name="dbname">test</ae:parameter>
++				</ae:parameter>
++				<ae:parameter name="configuration">
++					<ae:parameter name="metadata_driver_impl_argument">%core.model_dir%/Entities</ae:parameter>
++				</ae:parameter>
+ 			</database>
+ 			
+-			<database name="propelom" class="AgaviPropelDatabase">
+-				<ae:parameter name="config">%core.app_dir%/config/project-conf.php</ae:parameter>
+-			</database>
+-
+ 		</databases>
+ 	</ae:configuration>
+ 	
+Index: samples/app/config/autoload.xml
+===================================================================
+--- samples/app/config/autoload.xml	(revision 4760)
++++ samples/app/config/autoload.xml	(working copy)
+@@ -11,6 +11,9 @@
+ 			<autoload name="AgaviSampleAppUser">%core.lib_dir%/user/AgaviSampleAppUser.class.php</autoload>
+ 			
+ 			<autoload name="AgaviSampleAppProductValidator">%core.lib_dir%/validator/AgaviSampleAppProductValidator.class.php</autoload>
++			
++			<autoload name="Entities\Address">%core.model_dir%/Entities/Address.php</autoload>
++			<autoload name="Entities\User">%core.model_dir%/Entities/User.php</autoload>
+ 		</autoloads>
+ 	</ae:configuration>
+ </ae:configurations>
+\ No newline at end of file
+Index: samples/app/config/factories.xml
+===================================================================
+--- samples/app/config/factories.xml	(revision 4760)
++++ samples/app/config/factories.xml	(working copy)
+@@ -72,7 +72,7 @@
+ 	</ae:configuration>
+ 	
+ 	
+-	<ae:configuration context="console">
++	<ae:configuration context="console.*">
+ 		
+ 		<request class="AgaviConsoleRequest" />
+ 		
+@@ -85,6 +85,16 @@
+ 	</ae:configuration>
+ 	
+ 	
++	<ae:configuration context="console-doctrine">
++		
++		<request class="AgaviConsoleRequest">
++			<!-- the important bit: don't clear argc and argv -->
++			<ae:parameter name="unset_input">false</ae:parameter>
++		</request>
++		
++	</ae:configuration>
++	
++	
+ 	<ae:configuration context="soap">
+ 		
+ 		<controller class="AgaviSoapController" />
+Index: samples/app/modules/Default/actions/IndexAction.class.php
+===================================================================
+--- samples/app/modules/Default/actions/IndexAction.class.php	(revision 4760)
++++ samples/app/modules/Default/actions/IndexAction.class.php	(working copy)
+@@ -68,6 +68,12 @@
+ 	 */
+ 	public function getDefaultViewName()
+ 	{
++		$em = $this->getContext()->getDatabaseConnection();
++		$user = new \Entities\User();
++		$user->setName("Wombert");
++		$em->persist($user);
++		$em->flush();
++		die();
+ 		return 'Success';
+ 	}
+ }
+Index: samples/dev/doctrine/cli-config.php
+===================================================================
+--- samples/dev/doctrine/cli-config.php	(revision 0)
++++ samples/dev/doctrine/cli-config.php	(revision 0)
+@@ -0,0 +1,39 @@
++<?php
++
++/*
++
++This is an example cli-config.php for Doctrine 2 that can be used in applications.
++Adjust paths and other details in this file as necessary, and put it into a folder somewhere in your project (e.g. dev/doctrine)
++From this folder, you may then run the "doctrine" command line tool.
++As always with files that require modifications for each developer (like index.php), it is advisable to only have a template file and ask each developer to copy this file to "cli-config.php" and insert their respective environment name so the correct database configuration is used.
++
++factories.xml needs a configuration section similar to this:
++<ae:configuration context="doctrine-cli">
++	<request class="AgaviConsoleRequest">
++		<!-- the important bit: don't clear argc and argv -->
++		<ae:parameter name="unset_input">false</ae:parameter>
++	</request>
++	<response class="AgaviConsoleResponse" />
++	<routing class="AgaviConsoleRouting" />
++	<storage class="AgaviNullStorage" />
++	<user class="AgaviSecurityUser" />
++</ae:configuration>
++
++output_types.xml also needs an output type declared for this context, of course ("text" with no further settings will do).
++
++*/
++
++require('../../../src/agavi.php');
++
++require('../../app/config.php');
++
++Agavi::bootstrap('development');
++
++$em = AgaviContext::getInstance('console-doctrine')->getDatabaseConnection(); // fetches default connection; pass a connection name if necessary
++
++$helperSet = new \Symfony\Component\Console\Helper\HelperSet(array(
++	'db' => new \Doctrine\DBAL\Tools\Console\Helper\ConnectionHelper($em->getConnection()),
++	'em' => new \Doctrine\ORM\Tools\Console\Helper\EntityManagerHelper($em)
++));
++
++?>
+\ No newline at end of file

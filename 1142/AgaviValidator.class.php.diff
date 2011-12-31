@@ -1,0 +1,32 @@
+--- AgaviValidator.class.php.org	2009-06-01 04:46:04.000000000 +0000
++++ AgaviValidator.class.php	2009-08-12 07:52:05.000000000 +0000
+@@ -349,13 +349,18 @@
+ 	 * @return     string The input argument name.
+ 	 *
+ 	 * @author     Dominik del Bondio <ddb@bitxtender.com>
++	 * @author     Simon Cornelius P. Umacob <simoncpu@gmail.com>
+ 	 * @since      0.11.0
+ 	 */
+-	protected function getArgument()
++	protected function getArgument($name = '')
+ 	{
+-		$argNames = $this->arguments;
+-		reset($argNames);
+-		return current($argNames);
++		if ($name) {
++			return $this->arguments[$name];
++		} else {
++			$argNames = $this->arguments;
++			reset($argNames);
++			return current($argNames);
++		}
+ 	}
+ 
+ 	/**
+@@ -805,4 +810,4 @@
+ 	}
+ }
+ 
+-?>
+\ No newline at end of file
++?>

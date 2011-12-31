@@ -1,0 +1,53 @@
+Index: AgaviRouting.class.php
+===================================================================
+--- AgaviRouting.class.php	(revision 1742)
++++ AgaviRouting.class.php	(working copy)
+@@ -278,7 +278,7 @@
+ 			}
+ 
+ 
+-			if(!isset($options['defaults'][$name]) && ($param['pre'] || $param['val'] || $param['post'])) {
++			if(!isset($options['defaults'][$name]) && (isset($param['pre']) || isset($param['val']) || isset($param['post']))) {
+ 				unset($param['is_optional']);
+ 				$options['defaults'][$name] = $param;
+ 			}
+Index: AgaviRouting.class.php
+===================================================================
+--- AgaviRouting.class.php	(revision 1742)
++++ AgaviRouting.class.php	(working copy)
+@@ -278,7 +278,7 @@
+ 			}
+ 
+ 
+-			if(!isset($options['defaults'][$name]) && ($param['pre'] || $param['val'] || $param['post'])) {
++			if(!isset($options['defaults'][$name]) && (isset($param['pre']) || isset($param['val']) || isset($param['post']))) {
+ 				unset($param['is_optional']);
+ 				$options['defaults'][$name] = $param;
+ 			}
+@@ -547,7 +547,7 @@
+ 						} else {
+ 							$finalParams[$name] = $matchedParams[$name];
+ 						}
+-					} elseif(isset($defaults[$name])) {
++					} elseif(isset($defaults[$name]) && !empty($defaults[$name]['val'])) {
+ 						$finalParams[$name] = $defaults[$name]['pre'] . $defaults[$name]['val'] . $defaults[$name]['post'];
+ 					} else {
+ 						// there is no default or incoming match for this optional param, so remove it
+@@ -560,7 +560,7 @@
+ 						} else {
+ 							$finalParams[$name] = $matchedParams[$name];
+ 						}
+-					} elseif(isset($defaults[$name])) {
++					} elseif(isset($defaults[$name]) && !empty($defaults[$name]['val'])) {
+ 						$finalParams[$name] = $defaults[$name]['pre'] . $defaults[$name]['val'] . $defaults[$name]['post'];
+ 					}
+ 				}
+@@ -598,7 +598,7 @@
+ 				}
+ 			}
+ 		}
+-		
++
+ 		$params = $finalParams;
+ 
+ 		$from = array();

@@ -1,0 +1,75 @@
+Index: AgaviValidationManager.class.php
+===================================================================
+--- AgaviValidationManager.class.php	(revision 1868)
++++ AgaviValidationManager.class.php	(working copy)
+@@ -152,7 +152,7 @@
+ 		$this->dependencyManager->clear();
+ 		$this->fieldResults = array();
+ 		$this->incidents = array();
+-		$this->result = AgaviValidator::SUCCESS;
++		$this->setResult(AgaviValidator::SUCCESS, true);
+ 
+ 
+ 		foreach($this->children as $child) {
+@@ -250,7 +250,7 @@
+ 	public function execute(AgaviRequestDataHolder $parameters)
+ 	{
+ 		$result = true;
+-		$this->result = AgaviValidator::SUCCESS;
++		$this->setResult(AgaviValidator::SUCCESS, true);
+ 		
+ 		$req = $this->context->getRequest();
+ 
+@@ -265,7 +265,7 @@
+ 			++$executedValidators;
+ 
+ 			$v_ret = $validator->execute($parameters);
+-			$this->result = max($this->result, $v_ret);
++			$this->setResult($v_ret);
+ 
+ 			switch($v_ret) {
+ 				case AgaviValidator::SUCCESS:
+@@ -358,6 +358,32 @@
+ 	}
+ 
+ 	/**
++	 * Sets the result for the error manager
++	 *
++	 * @param      int The value of the result
++	 * @param      bool Override the current result
++	 *
++	 * @author     Ross Lawley <ross.lawley@gmail.com>
++	 * @since      0.11.0
++	 */
++	public function setResult($result, $override = false)
++	{
++		switch($result) {
++			case AgaviValidator::SUCCESS:
++			case AgaviValidator::NONE:
++			case AgaviValidator::NOTICE:
++			case AgaviValidator::ERROR:
++			case AgaviValidator::CRITICAL:
++				break;
++			default:
++				$result = $this->result;
++				break;
++		}
++		if ($result > $this->result || $override)
++			$this->result = $result;
++	}
++
++	/**
+ 	 * Adds a validation result for a given field.
+ 	 *
+ 	 * @param      AgaviValidator The validator.
+@@ -484,9 +510,7 @@
+ 		// yet and adjust our result if needed (which only happens when this method
+ 		// is called not from a validator)
+ 		$severity = $incident->getSeverity();
+-		if($severity > $this->result) {
+-			$this->result = $severity;
+-		}
++		$this->setResult($severity);
+ 		foreach($incident->getFields() as $field) {
+ 			if(!isset($this->fieldResults[$field]) || $this->getFieldErrorCode($field) < $severity) {
+ 				$this->addFieldResult($incident->getValidator(), $field, $incident->getSeverity());

@@ -1,0 +1,26 @@
+Index: src/build/templates/defaults/app/modules/templates/WelcomeSuccess.php.tmpl
+===================================================================
+--- src/build/templates/defaults/app/modules/templates/WelcomeSuccess.php.tmpl	(リビジョン 3322)
++++ src/build/templates/defaults/app/modules/templates/WelcomeSuccess.php.tmpl	(作業コピー)
+@@ -32,7 +32,7 @@
+ 	margin-top: 50px;
+ 	padding-top: 340px;
+ 	background-image: url('plant.png');
+-	background-position: center top;
++	background-position: top center;
+ 	background-repeat: no-repeat;
+ 	text-align: center;
+ }
+Index: test/sandbox/app/modules/Default/templates/WelcomeSuccess.php
+===================================================================
+--- test/sandbox/app/modules/Default/templates/WelcomeSuccess.php	(リビジョン 3322)
++++ test/sandbox/app/modules/Default/templates/WelcomeSuccess.php	(作業コピー)
+@@ -32,7 +32,7 @@
+ 	margin-top: 50px;
+ 	padding-top: 340px;
+ 	background-image: url('plant.png');
+-	background-position: center top;
++	background-position: top center;
+ 	background-repeat: no-repeat;
+ 	text-align: center;
+ }

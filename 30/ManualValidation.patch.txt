@@ -1,0 +1,286 @@
+Index: docs/docbook/manual.xml
+===================================================================
+--- docs/docbook/manual.xml	(revision 1621)
++++ docs/docbook/manual.xml	(working copy)
+@@ -835,9 +835,278 @@
+     <section>
+       <title>Validation</title>
+ 
+-      <para>why validation, how to validate, explain the drop-in character,
+-      explain what it can also do (normalization etc), how sweet it is with
+-      the FormPopulationFilter</para>
++      <section>
++        <title>Why Validation?</title>
++
++        <para>It is strongly recommended to validate any request data. All
++        request data including headers and cookies comes from the user and
++        it's content is dictated by the the user. This user may as well be a
++        malicious user trying to attack your application/server/database or
++        use your application to attack other people visiting your website
++        through XSS-attacks or similar. No input parameters should therefore
++        be trusted.</para>
++
++        <para>There are other reasons to validate data: Think of a newsletter
++        application form - it's always a good thing to check whether the data
++        the user entered is at least a syntactically correct email-address.
++        Sometimes typing errors happen and the user is frustrated that he
++        didn't get the newsletter he ordered. It would have been better to
++        check the data the user entered and provide him with a friendly error
++        message at the registration.</para>
++
++        <para>The best situation you can be in is if you know exactly what
++        input data is valid - e.g. if your page expects an id parameter to
++        pull a record from the database you know for sure that it must
++        absolutely be an integer and everything else is an attempt to trick
++        your application to do something wrong. Other situations may not be as
++        easy, but you should still try to validate as much data as possible.
++        </para>
++      </section>
++
++      <section>
++        <title>When does Validation happen</title>
++
++        <para>Validation happens if the action serves the incoming request
++        method, that is if the action declares an execute method that matches
++        the request type (executeRead() for get request, executeWrite() for
++        post request or a generic execute() method).</para>
++      </section>
++
++      <section>
++        <title>How to validate</title>
++
++        <para>Validation happens by registering so called validators with the
++        request. A validator is an object that checks wether an input
++        parameter conforms to a set of given constraints - such as "is the
++        parameter 'id' really an integer value etc.". There two ways of
++        registering a validator and a third way to perform more elaborate
++        validations that cannot be handled by a validator: </para>
++
++        <section>
++          <title>XML Configuration</title>
++
++          <para>There are several ways of validating input data. The simplest
++          way is placing an XML configuration file with the proper
++          configuration in the "validate" directory of the module. The XML
++          file must be named &lt;ActionName&gt;.xml, that is if your action is
++          named "LoginAction", the XML file must be "Login.xml". In this file,
++          you can define which validators will be registered for any request
++          handled by the action. It is important to note that even though you
++          can set some validators not to execute on a read or write request,
++          those validators will be registered anyways and as you can't
++          register a validator twice, there is no way to have one input
++          parameter be validated in a different manner on read and write - at
++          least not when you register the validators through the XML file. So
++          there is a second way that provides a finer control over what
++          validators will be registered on read/write requests: the
++          registerValidators() family of methods. </para>
++
++          <section>
++            <title>Example XML Configuration (from the sample app,
++            LoginAction)</title>
++
++            <programlisting>&lt;?xml version="1.0" encoding="UTF-8" standalone="no"?&gt;
++&lt;!--
+++~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+
++| This file is part of the Agavi package                 |
++| Copyright (c) 2006 the Agavi Project.                  |
+++~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+
++| AGAVI VALIDATORS CONFIGURATION                         |
+++~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+
++--&gt;
++&lt;configurations&gt;
++  &lt;!-- custom validators and default parameters --&gt;
++  &lt;configuration&gt;
++    &lt;validators&gt;
++      &lt;validator class="string" name="username_too_short"&gt;
++         &lt;arguments&gt;
++           &lt;argument&gt;username&lt;/argument&gt;
++         &lt;/arguments&gt;
++         &lt;errors&gt;
++           &lt;error&gt;The username you supplied is less than 4 characters&lt;/error&gt;
++         &lt;/errors&gt;
++         &lt;parameters&gt;
++           &lt;parameter name="min"&gt;5&lt;/parameter&gt;
++         &lt;/parameters&gt;
++       &lt;/validator&gt;
++    &lt;/validators&gt;
++  &lt;/configuration&gt;
++&lt;configurations&gt;</programlisting>
++
++            <para>This registers a single validator that checks wether the
++            username is longer than 5 characters. Let's look at this snippet
++            in detail. The interestion block is the
++            <methodname>&lt;validators&gt;</methodname> element. It contains a
++            list of <methodname>&lt;validator</methodname>&gt; elements, each
++            one representing a validator. A validator must have a type
++            ("string" in this case) and a name which must be unique
++            ("username_too_short" here) . A validator can act upon multiple
++            input parameters, these are listed in the
++            <methodname>&lt;arguments&gt;</methodname> block, each one wrapped
++            in a <methodname>&lt;argument&gt;</methodname> tag. The
++            <methodname>&lt;errors&gt;</methodname> block lists the available
++            error messages, in this case there is only the generic error
++            available. Finally, the
++            <methodname>&lt;parameters&gt;</methodname> block lists the
++            parameters that get passed into the validator. These depend on the
++            type of validator you're trying to register. The
++            AgaviStringValidator being used here for example accepts
++            parameters such as minimum and maximum length etc. </para>
++          </section>
++        </section>
++
++        <section>
++          <title>registerValidators(), registerReadValidators(),
++          registerWriteValidators()</title>
++
++          <para>While the XML configuration method is convenient most of the
++          time, sometimes a more fine grained control is nessesary. Sometimes
++          you might wish to validate a parameter differently on a read request
++          than on a write request or the validation might depend on data no
++          known when you write the application. Think of a form that gets
++          generated depending on some config parameters pulled from a
++          database. When you write the action, you don't know yet what form
++          fields will be available and which type they have - however when the
++          form gets displayed you will know. You just need to tell agavi about
++          it - this is where the <methodname>registerValidators()</methodname>
++          methods come into play. If your action defines a method
++          <methodname>registerReadValidators()</methodname>, it will be
++          executed before <methodname>executeRead()</methodname> and all
++          validators that you registered in this method will be executed as
++          well. The same is true for
++          <methodname>registerWriteValidators()</methodname>, only that it
++          will be called before <methodname>executeWrite()</methodname> will
++          run and <methodname>registerValidators()</methodname> will be
++          executed before any of the execute methods will be run. That way,
++          you can dynamically add validators, you can even mix both methods:
++          use the XML for any validators that you you'll need for shure and
++          use execute*Validators() to add anything that is dynamic. However,
++          as noted above you can't register a validator twice. </para>
++
++          <section>
++            <title>Sample registerReadValidators() (does the same as the XML
++            above)</title>
++
++            <para><programlisting>public function registerWriteValidators()
++{
++    $validationManager = $this-&gt;getContext()-&gt;getValidationManager();
++
++    $arguments = array('username');
++    $errors = array('' =&gt; 'The username you supplied is less than 4 characters.');
++    $parameters = array (
++       'min' =&gt; '5',
++       'severity' =&gt; 'error',
++       'method' =&gt; NULL,
++       'required' =&gt; true,
++       'class' =&gt; 'string'
++    );
++
++    $validationManager-&gt;addChild(new AgaviStringValidator($validationManager, $arguments, $errors, $parameters, 'username_too_short'));
++}</programlisting>This example does the same as the XML style registration
++            above. </para>
++          </section>
++        </section>
++
++        <section>
++          <title>validate(), validateRead(), validateWrite()</title>
++
++          <para>If an action declares a method with the name "validate()", it
++          will get called after the registered validators have run but before
++          the execute Method gets called. It recieves a single parameter,
++          $parameters with the type AgaviParameterHolder. If validate returns
++          true, the execution continues, if it returns false, validation fails
++          and the error must be handled. As with the register*Validator()
++          family of methods, a method named validateRead(AgaviParameterHolder
++          $parameters) will only be called in read requests and a method named
++          validateWrite(AgaviParameterHolder $parameters) only on write
++          request. You can use these method to perform advanced validation
++          that is not possible with validators. As validators are generic and
++          reusable, you should look into creating your own validator whenever
++          feasible.</para>
++        </section>
++      </section>
++
++      <section>
++        <title>Handling Validation errors</title>
++
++        <para>Once validation failed, the error must be handled. The default
++        way is to render an error view, but sometimes you might wish to slip
++        in some logic such as logging the error. You can do this by declaring
++        a method named "handleError()" in your action. It will be called if a
++        validation error occured and recieves a single parameter, $parameters
++        with the type AgaviParameterHolder. It must return the name of a view,
++        just as the execute methods do. </para>
++      </section>
++
++      <section>
++        <title>The FormPopulationFilter</title>
++
++        <para>Once you validated the input data, there may be errors that must
++        be returned to the client. The standard way is displaying the form
++        back to the user and having him correct the errors in the input data.
++        This can be done by pulling the supplied data from the request object
++        in your form template and filling the input fields with the proper
++        value. There is a more convenient way though: The
++        FormPopulationFilter. It is a regular filter that gets executed
++        anytime an ErrorView gets rendered. It parses the resulting document
++        and extracts the form element whose action attribute matches the
++        current page's URL. It then matches the input fields in this form
++        against the request parameters and fills in the request values in the
++        proper input fields. It even marks the input field and the
++        corresponding label (if any) with a special CSS class that you can use
++        to indicate an error to your users. While inserting the request
++        parameters, it takes care of escaping the values properly so that XSS
++        attacks are not possible. The FormPopulationFilter cannot prefill form
++        values with default values pulled from a database or something alike -
++        this task is entirely up to you.</para>
++      </section>
++
++      <section>
++        <title>Other things Validators can do for you</title>
++
++        <para></para>
++
++        <section>
++          <title>Normalization</title>
++
++          <para></para>
++        </section>
++
++        <section>
++          <title>Casting Values (same as Normalization)</title>
++
++          <para></para>
++        </section>
++
++        <section>
++          <title>Validation and Internationalization</title>
++
++          <para>If you have an internationalized application you need to
++          translate the error messages as well. To make this possible, each
++          validator accepts a "translation_domain" parameter. All error
++          messages will be translated with the Translator registered for this
++          domain.</para>
++        </section>
++      </section>
++
++      <section>
++        <title>Available Validators</title>
++
++        <para>Depending on the validator type, every validator accepts
++        different parameters.</para>
++
++        <section>
++          <title>String (AgaviStringValidator)</title>
++
++          <para></para>
++        </section>
++      </section>
++
++      <section>
++        <title>Examples</title>
++
++        <programlisting></programlisting>
++      </section>
+     </section>
+ 
+     <section>

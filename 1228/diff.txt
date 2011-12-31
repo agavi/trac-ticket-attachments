@@ -1,0 +1,121 @@
+Index: app/lib/view/AgaviSampleAppBaseView.class.php
+===================================================================
+--- app/lib/view/AgaviSampleAppBaseView.class.php	(revision 4422)
++++ app/lib/view/AgaviSampleAppBaseView.class.php	(working copy)
+@@ -116,6 +116,20 @@
+ 		
+ 		$this->loadLayout($layoutName);
+ 	}
++
++    /**
++     * Set pre-populated values inside a form. If no form id are specified, the
++	 * current form will be used.
++	 * @param object The parameters.
++	 * @param string The form name.
++	 * @return void
++	 * @author Jean-Philippe Dery (jean-philippe.dery@lemieuxbedard.com)
++	 * @since 1.0.0
++	 */
++	public function setFormPopulation(AgaviParameterHolder $parameters, $form = null)
++	{
++		$this->context->getRequest()->setAttribute('populate', ($form ? array($form => $parameters) : $parameters), 'org.agavi.filter.FormPopulationFilter');
++	}	
+ }
+ 
+ ?>
+\ No newline at end of file
+Index: app/modules/Default/views/IndexSuccessView.class.php
+===================================================================
+--- app/modules/Default/views/IndexSuccessView.class.php	(revision 4422)
++++ app/modules/Default/views/IndexSuccessView.class.php	(working copy)
+@@ -22,6 +22,11 @@
+ 
+ 		// set the title
+ 		$this->setAttribute('_title', $this->tm->_('Welcome to the Agavi Sample Application', 'default.layout'));
++		
++		$params = new AgaviParameterHolder();
++		$params->setParameter('text', 'Some Value');
++		$this->setFormPopulation($params);
++		
+ 	}
+ 
+ }
+Index: app/modules/Default/templates/IndexSuccess.php
+===================================================================
+--- app/modules/Default/templates/IndexSuccess.php	(revision 4422)
++++ app/modules/Default/templates/IndexSuccess.php	(working copy)
+@@ -14,3 +14,17 @@
+ your errors may be traced back to invalid configuration cache files, which is
+ why it's suggested that you keep debugging on until your application is fully
+ functioning.
++
++<form method="post" action="<?php echo $ro->gen(null) ?>" enctype="multipart/form-data">
++
++	<strong> Some Text using special characters such as é à è ç ...	</strong>
++
++	<fieldset>
++		<ol>
++			<li>
++				<input type="text" id="fe-text" name="text" />
++			</li>
++		</ol>
++	</fieldset>
++
++</form>
+\ No newline at end of file
+Index: app/templates/Master.php
+===================================================================
+--- app/templates/Master.php	(revision 4422)
++++ app/templates/Master.php	(working copy)
+@@ -1,22 +1,33 @@
+ <?php $locale = $tm->getCurrentLocale(); ?>
+-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php echo $locale->getLocaleLanguage(); ?>" lang="<?php echo $locale->getLocaleLanguage(); ?>"<?php if($locale->getCharacterOrientation() == 'right-to-left'): ?> dir="rtl"<?php endif; ?>>
++<!DOCTYPE html>
++<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="fr-CA" lang="fr-CA">
+ 	<head>
+-		<meta http-equiv="Content-Type" content="<?php echo $container->getOutputType()->getParameter('http_headers[Content-Type]', 'text/html; charset=utf-8'); ?>" />
+-		<title><?php echo $tm->_('Agavi Sample Application', 'default.layout'); ?></title>
++
++		<title><?php echo $tm->_('Agavi Sample Application', 'default.layout'); ?> É À E</title>
+ 		<base href="<?php echo $ro->getBaseHref(); ?>" />
+ 		<link rel="stylesheet" type="text/css" href="css/style.css" />
++		
++	<meta name="keywords" content="<?php echo $t['_keywords'] ?>" />
++	<meta name="description" content="<?php echo $t['_description'] ?>" />
++	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
++	
++		
++		
+ 	</head>
+ 	<body>
+ <?php echo $slots['header']; ?>
+ 		
+ <?php echo $slots['menu']; ?>
+ 		
++		
+ 		<div id="content">
+ 			<h2><?php echo $t['_title']; ?></h2>
+ <?php echo $inner; // print the content layer output ?>
+ 		</div>
++
+ 		
++		
++				
+ <?php echo $slots['footer']; ?>
+ 	</body>
+ </html>
+\ No newline at end of file
+Index: pub/index.php
+===================================================================
+--- pub/index.php	(revision 4422)
++++ pub/index.php	(working copy)
+@@ -5,7 +5,7 @@
+ // +---------------------------------------------------------------------------+
+ // | An absolute filesystem path to the agavi/agavi.php script.                |
+ // +---------------------------------------------------------------------------+
+-require('../../src/agavi.php');
++require('/home/lbweb-dev/Library/Agavi/Latest/agavi.php');
+ 
+ // +---------------------------------------------------------------------------+
+ // | An absolute filesystem path to our app/config.php script.                 |

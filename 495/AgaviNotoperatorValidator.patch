@@ -1,0 +1,22 @@
+Index: AgaviNotoperatorValidator.class.php
+===================================================================
+--- AgaviNotoperatorValidator.class.php	(revision 1868)
++++ AgaviNotoperatorValidator.class.php	(working copy)
+@@ -66,12 +66,17 @@
+ 	{
+ 		$children = $this->children;
+ 		$child = array_shift($children);
++		$vmResult = $this->validationManager->getResult();
+ 		$result = $child->execute($this->validationParameters);
+ 		if($result == AgaviValidator::CRITICAL || $result == AgaviValidator::SUCCESS) {
+ 			$this->result = max(AgaviValidator::ERROR, $result);
+ 			$this->throwError();
+ 			return false;
+ 		} else {
++			// Clean up any child errors
++			if (array_key_exists($child->name, $this->validationManager->incidents))
++				unset($this->validationManager->incidents[$child->name]);
++			$this->validationManager->setResult($vmResult, true);
+ 			return true;
+ 		}
+ 	}	

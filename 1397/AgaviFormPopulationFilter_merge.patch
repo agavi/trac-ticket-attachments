@@ -1,0 +1,31 @@
+Index: AgaviFormPopulationFilter.class.php
+===================================================================
+--- AgaviFormPopulationFilter.class.php	(revision 4758)
++++ AgaviFormPopulationFilter.class.php	(working copy)
+@@ -92,10 +92,17 @@
+ 			return;
+ 		}
+ 
+-		if(is_array($cfg['populate']) || $cfg['populate'] instanceof AgaviParameterHolder) {
++		if((is_array($cfg['populate']) || $cfg['populate'] instanceof AgaviParameterHolder) && $cfg['merge_with_request_data'] === false) {
+ 			$populate = $cfg['populate'];
+ 		} elseif($cfg['populate'] === true || (in_array($container->getRequestMethod(), $cfg['methods']) && $cfg['populate'] !== false)) {
+ 			$populate = $rq->getRequestData();
++			if($cfg['merge_with_request_data'] === true) {
++				if(is_array($cfg['populate'])) {
++					$populate->setParameters($cfg['populate']);
++				} elseif($cfg['populate'] instanceof AgaviParameterHolder) {
++					$populate->setParameters($cfg['populate']->getParameters());
++				}
++			}
+ 		} else {
+ 			return;
+ 		}
+@@ -956,6 +963,7 @@
+ 
+ 			'populate'                   => null,
+ 			'skip'                       => null,
++			'merge_with_request_data'    => false,
+ 			'include_hidden_inputs'      => true,
+ 			'include_password_inputs'    => false,
+ 

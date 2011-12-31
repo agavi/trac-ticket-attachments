@@ -1,0 +1,86 @@
+diff --git a/libs/agavi/util/AgaviParameterHolder.class.php b/libs/agavi/util/AgaviParameterHolder.class.php
+index 3244648..66e5419 100644
+--- a/libs/agavi/util/AgaviParameterHolder.class.php
++++ b/libs/agavi/util/AgaviParameterHolder.class.php
+@@ -29,7 +29,7 @@
+  *
+  * @version    $Id: AgaviParameterHolder.class.php 4399 2010-01-11 16:41:20Z david $
+  */
+-class AgaviParameterHolder
++class AgaviParameterHolder implements Iterator
+ {
+ 	/**
+ 	 * @var        array An array of parameters
+@@ -37,6 +37,11 @@ class AgaviParameterHolder
+ 	protected $parameters = array();
+ 
+ 	/**
++	 * @var			string will be used for iteration
++	 */
++	protected $_current = null ;
++
++	/**
+ 	 * Constructor. Accepts an array of initial parameters as an argument.
+ 	 *
+ 	 * @param      array An array of parameters to be set right away.
+@@ -285,6 +290,59 @@ class AgaviParameterHolder
+ 		}
+ 	}
+ 
++	/**
++	 * reset the internal pointer
++	 *
++	 * @author		behrooz shabani <behrooz@rock.com>
++	 */
++	public function rewind ( )
++	{
++		reset ( $this->parameters );
++		$this->next ( );
++	}
++
++	/**
++	 * fetch value of current item
++	 *
++	 * @return mixed value of current item
++	 * @author		behrooz shabani <behrooz@rock.com>
++	 */
++	public function current ( )
++	{
++		return $this->parameters [ $this->_current ] ;
++	}
++
++	/**
++	 * fetch key of current item
++	 *
++	 * @return string key of current item
++	 * @author		behrooz shabani <behrooz@rock.com>
++	 */
++	public function key ( )
++	{
++		return $this->_current ;
++	}
++
++	/**
++	 * moves the internal pointer to next item
++	 *
++	 * @author		behrooz shabani <behrooz@rock.com>
++	 */
++	public function next ( )
++	{
++		list ( $this->_current ) = each ( $this->parameters );
++	}
++
++	/**
++	 * checks if internal pointer is in valid position
++	 *
++	 * @return boolean
++	 * @author		behrooz shabani <behrooz@rock.com>
++	 */
++	public function valid ( )
++	{
++		return !is_null ( $this->_current ) and isset ( $this->parameters [ $this->_current ] );
++	}
+ }
+ 
+ ?>
+\ No newline at end of file

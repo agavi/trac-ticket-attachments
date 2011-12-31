@@ -1,0 +1,20 @@
+204a205,223
+> 	
+> 	/**
+> 	 * Removes a named child validator.
+> 	 *
+> 	 * @param      AgaviValidator The child validator.
+> 	 *
+> 	 * @author     Yannick Gagnon <yannick.gagnon@gmail.com>
+> 	 * @since      1.0.6
+> 	 */
+> 	public function removeChild($name)
+> 	{
+> 		if(!isset($this->children[$name])) {
+> 			throw new InvalidArgumentException('A validator with the name "' . $name . '" does not exist');
+> 		}
+> 
+> 		$this->children[$name]->shutdown();
+>         
+> 		unset($this->children[$name]);
+> 	}

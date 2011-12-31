@@ -1,0 +1,32 @@
+387c387
+< 		if(!$stmt->rowCount()) {
+---
+> 		if(!$stmt->rowCount() && !$this->sessionExists($id)) {
+422a423,449
+> 	
+> 	/**
+> 	 * Checks whether a session ID exists or not.
+> 	 *
+> 	 * @param string $id The db_id_col value.
+> 	 * @return boolean
+> 	 * @author Jeramy Wenserit <jeramy@xylesoft.co.uk>
+> 	 */
+> 	protected function sessionExists($id)
+> 	{
+> 		// get table/column
+> 		$db_table    = $this->getParameter('db_table');
+> 		$db_id_col   = $this->getParameter('db_id_col', 'sess_id');
+> 		
+> 		$sql = sprintf('SELECT count(*) as count FROM %s WHERE %s = :id', $db_table, $db_id_col);
+> 		try {
+> 			$stmt = $this->connection->prepare($sql);
+> 			$stmt->bindParam(':id', $id);
+> 			$stmt->execute();
+> 			$result = $stmt->fetch(PDO::FETCH_ASSOC);
+> 			
+> 			return (bool) $result['count'];
+> 		} catch (PDOException $e) {
+> 			$error = sprintf('PDOException was thrown when trying to determine whether a specific session exists. Message: "%s"', $e->getMessage());
+> 			throw new AgaviDatabaseException($error);
+> 		}
+> 	}

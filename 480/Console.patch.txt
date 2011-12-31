@@ -1,0 +1,484 @@
+Index: app/config/routing.xml
+===================================================================
+--- app/config/routing.xml	(revision 3)
++++ app/config/routing.xml	(working copy)
+@@ -8,4 +8,12 @@
+ 			<route pattern="^/$" module="%actions.default_module%" action="%actions.default_action%" />
+ 		</routes>
+ 	</configuration>
++
++		<configuration context="console">
++		<!-- Cron Routes -->
++		<route name="cron" pattern="^/cron/">
++			<route name="cron.gen.tagcloud" pattern="^tag_cloud/$"  module="Widget" action="TagCloud" />
++		</route>
++		<!-- End Cron Routes -->
++	</configuration>
+ </configurations>
+\ No newline at end of file
+Index: app/config/autoload.xml
+===================================================================
+--- app/config/autoload.xml	(revision 3)
++++ app/config/autoload.xml	(working copy)
+@@ -5,6 +5,11 @@
+ 		<autoload name="ProjectBaseAction">%core.lib_dir%/action/ProjectBaseAction.class.php</autoload>
+ 		<autoload name="ProjectBaseModel">%core.lib_dir%/model/ProjectBaseModel.class.php</autoload>
+ 		<autoload name="ProjectBaseView">%core.lib_dir%/view/ProjectBaseView.class.php</autoload>
+-		
++
++
++		<autoload name="ConsoleRequest">%core.lib_dir%/console/ConsoleRequest.class.php</autoload>
++		<autoload name="ConsoleResponse">%core.lib_dir%/console/ConsoleResponse.class.php</autoload>
++		<autoload name="ConsoleRouting">%core.lib_dir%/console/ConsoleRouting.class.php</autoload>
++
+ 	</configuration>
+ </configurations>
+\ No newline at end of file
+Index: app/config/factories.xml
+===================================================================
+--- app/config/factories.xml	(revision 3)
++++ app/config/factories.xml	(working copy)
+@@ -42,5 +42,14 @@
+ 		</response>
+ 	
+ 	</configuration>
+-	
++
++	<configuration context="console">
++		<request class="ConsoleRequest" />
++		<routing class="ConsoleRouting" />
++		<response class="ConsoleResponse" />
++		<storage class="AgaviNullStorage" />
++		<execution_filter class="AgaviExecutionFilter">
++			<parameter name="enable_caching">false</parameter>
++		</execution_filter>
++	</configuration>
+ </configurations>
+\ No newline at end of file
+Index: app/lib/console/ConsoleRouting.class.php
+===================================================================
+--- app/lib/console/ConsoleRouting.class.php	(revision 0)
++++ app/lib/console/ConsoleRouting.class.php	(revision 0)
+@@ -0,0 +1,60 @@
++<?php
++/**
++ * ConsoleRouting
++ *
++ * @package    agavi
++ * @subpackage routing
++ *
++ * @author     Dominik del Bondio <ddb@bitxtender.com>
++ * @author     Felix Gilcher <felix@andersground.net>
++ * @copyright  Authors
++ * @copyright  The Agavi Project
++ *
++ * @since      0.11.RC4
++ *
++ * @version    $Id$
++ */
++class ConsoleRouting extends AgaviRouting
++{
++	
++	/**
++	 * Initialize the routing instance.
++	 *
++	 * @param      AgaviContext The Context.
++	 * @param      array        An array of initialization parameters.
++	 *
++	 * @author     David Zülke <dz@bitxtender.com>
++	 * @author     Veikko Mäkinen <veikko@veikkomakinen.com>
++	 * @author     Dominik del Bondio <ddb@bitxtender.com>
++ 	 * @author     Felix Gilcher <felix@andersground.net>
++	 * @since      0.11.RC4
++	 */
++	public function initialize(AgaviContext $context, array $parameters = array())
++	{
++		parent::initialize($context, $parameters);
++		$rq = $this->context->getRequest();
++		$this->input = $rq->getCommand();
++	}
++
++
++	/**
++	 * Generate a formatted Agavi URL.
++	 *
++	 * generating urls is not supported for console
++	 *
++	 * @param      string A route name.
++	 * @param      array  An associative array of parameters.
++	 * @param      mixed  An array of options, or the name of an options preset.
++	 *
++	 * @return     string The generated URL.
++	 *
++	 * @author     Felix Gilcher <felix@andersground.net>
++	 * @since      0.11.RC4
++	 */
++	public function gen($route, array $params = array(), $options = array())
++	{
++		throw new BadMethodCallException('Generating URLs is not implemented for Console.');
++	}
++}
++
++?>
+Index: app/lib/console/ConsoleRequest.class.php
+===================================================================
+--- app/lib/console/ConsoleRequest.class.php	(revision 0)
++++ app/lib/console/ConsoleRequest.class.php	(revision 0)
+@@ -0,0 +1,121 @@
++<?php
++/**
++ * ConsoleRequest
++ *
++ * @package    agavi
++ * @subpackage request
++ *
++ * @author     Dominik del Bondio <ddb@bitxtender.com>
++ * @author     Felix Gilcher <felix@andersground.net>
++ * @copyright  Authors
++ * @copyright  The Agavi Project
++ *
++ * @since      0.11.RC4
++ *
++ * @version    $Id$
++ */
++class ConsoleRequest extends AgaviRequest
++ {
++	/**
++	 * the command passed to the cli script
++	 */
++	private $command;
++
++	/**
++	 * the name the cli script was called with
++	 */
++	private $scriptName;
++	
++	public function getCommand()
++	{
++		return $this->command;
++	}
++
++	/**
++	 * Constructor.
++	 *
++	 * @author     David Zuelke <dz@bitxtender.com>
++	 * @since      0.11.0
++	 */
++	public function __construct()
++	{
++		parent::__construct();
++		$this->setParameters(array(
++			'request_data_holder_class' => 'AgaviRequestDataHolder',
++		));
++	}
++
++	/**
++	 * Initialize this Request.
++	 *
++	 * @param      AgaviContext An AgaviContext instance.
++	 * @param      array        An associative array of initialization parameters.
++	 *
++	 * @throws     <b>AgaviInitializationException</b> If an error occurs while
++	 *                                                 initializing this Request.
++	 *
++	 * @author     Felix Gilcher <felix@andersground.net>
++	 * @since      0.11.RC4
++	 */
++	public function initialize(AgaviContext $context, array $parameters = array())
++	{
++		parent::initialize($context, $parameters);
++		
++		$this->setMethod('console');
++		
++		$argv = & $GLOBALS['argv'];
++		
++		$this->scriptName = $argv[0];
++				
++		if (isset($argv[1])) {
++			$this->command = $argv[1];
++		}
++		
++		$parameters = array();
++		
++		$i = 2; 
++		$argc = count($argv);
++		
++		while ($i < $argc) {
++			if (!empty($argv[$i + 1]) && '-' != $argv[$i + 1]{0}) {
++				$parameters[ltrim($argv[$i], '-')] = $argv[$i + 1];
++				$i += 2;
++			} else {
++				$parameters[ltrim($argv[$i], '-')] = true;
++				++$i;
++			}
++		}
++		
++		if(!AgaviConfig::get('core.use_routing', false)) {
++			// routing disabled, set the module and action parameters manually and bail out
++			$module = strtok($this->getCommand(), '.');
++			$action = strtok('');
++			
++			$parameters[$this->getParameter('module_accessor')] = $module;
++			$parameters[$this->getParameter('action_accessor')] = $action;
++		}
++		
++		
++		$rdhc = $this->getParameter('request_data_holder_class');
++		$this->setRequestData(new $rdhc(array(
++			constant("$rdhc::SOURCE_PARAMETERS") => $parameters
++		)));
++		
++	}
++	
++	/**
++	 * Do any necessary startup work after initialization.
++	 *
++	 * This method is not called directly after initialize().
++	 *
++	 * @author     David Zuelke <dz@bitxtender.com>
++	 * @since      0.11.0
++	 */
++	public function startup()
++	{
++		if($this->getParameter("unset_input", true)) {
++			unset($GLOBALS['argv']);
++		}
++	}
++ }
++?>
+Index: app/lib/console/ConsoleResponse.class.php
+===================================================================
+--- app/lib/console/ConsoleResponse.class.php	(revision 0)
++++ app/lib/console/ConsoleResponse.class.php	(revision 0)
+@@ -0,0 +1,125 @@
++<?php
++/**
++ * ConsoleResponse
++ *
++ * @package    agavi
++ * @subpackage response
++ *
++ * @author     Dominik del Bondio <ddb@bitxtender.com>
++ * @author     Felix Gilcher <felix@andersground.net>
++ * @copyright  Authors
++ * @copyright  The Agavi Project
++ *
++ * @since      0.11.RC4
++ *
++ * @version    $Id$
++ */
++class ConsoleResponse extends AgaviResponse
++{
++	/**
++	 * Send all response data to the client.
++	 *
++	 * @param      AgaviOutputType An optional Output Type object with information
++	 *                             the response can use to send additional data,
++	 *                             such as HTTP headers
++	 *
++	 * @author     David Zülke <dz@bitxtender.com>
++	 * @since      0.11.0
++	 */
++	public function send(AgaviOutputType $outputType = null)
++	{
++		$this->sendContent();
++	}
++	
++	/**
++	 * Clear all reponse data.
++	 *
++	 * @author     David Zülke <dz@bitxtender.com>
++	 * @since      0.11.0
++	 */
++	public function clear()
++	{
++		$this->clearContent();
++	}
++
++	
++	/**
++	 * Import response data from another response.
++	 *
++	 * @param      AgaviResponse The other response to import information from.
++	 *
++	 * @author     Felix Gilcher <felix@andersground.net>
++	 * @since      0.11.RC4
++	 */
++	public function merge(AgaviResponse $otherResponse)
++	{
++	}
++
++	/**
++	 * Redirect externally.
++	 *
++	 * @param      mixed Where to redirect.
++	 *
++	 * @author     Felix Gilcher <felix@andersground.net>
++	 * @since      0.11.RC4
++	 */
++	public function setRedirect($to)
++	{
++		throw new BadMethodCallException('Redirects are not implemented for Console.');
++	}
++
++	/**
++	 * Get info about the set redirect. Not implemented here.
++	 *
++	 * @return     array An assoc array of redirect info, or null if none set.
++	 *
++	 * @throws     BadMethodCallException
++	 *
++	 * @author     David Zülke <dz@bitxtender.com>
++	 * @since      0.11.0
++	 */
++	public function getRedirect()
++	{
++		throw new BadMethodCallException('Redirects are not implemented for Console.');
++	}
++
++	/**
++	 * Check if a redirect is set. Not implemented here.
++	 *
++	 * @return     bool true, if a redirect is set, otherwise falsae
++	 *
++	 * @throws     BadMethodCallException
++	 *
++	 * @author     David Zülke <dz@bitxtender.com>
++	 * @since      0.11.0
++	 */
++	public function hasRedirect()
++	{
++		throw new BadMethodCallException('Redirects are not implemented for Console.');
++	}
++
++	/**
++	 * Clear any set redirect information. Not implemented here.
++	 *
++	 * @throws     BadMethodCallException
++	 *
++	 * @author     David Zülke <dz@bitxtender.com>
++	 * @since      0.11.0
++	 */
++	public function clearRedirect()
++	{
++		throw new BadMethodCallException('Redirects are not implemented for Console.');
++	}
++
++	/**
++	 * @see        AgaviResponse::isMutable()
++	 *
++	 * @author     David Zülke <dz@bitxtender.com>
++	 * @since      0.11.0
++	 */
++	public function isContentMutable()
++	{
++		return false;
++	}
++}
++?>
+Index: app/lib/action/ProjectBaseAction.class.php
+===================================================================
+--- app/lib/action/ProjectBaseAction.class.php	(revision 3)
++++ app/lib/action/ProjectBaseAction.class.php	(working copy)
+@@ -2,21 +2,31 @@
+ 
+ class ProjectBaseAction extends AgaviAction
+ {
+-	/*
+-		This is the base action all your application's actions should extend.
+-		This way, you can easily inject new functionality into all of your actions.
+-		
+-		One example would be to extend the initialize() method and assign commonly
+-		used objects such as the request as protected class members.
+-		
+-		Another example would be a custom isSimple() method that returns true if the
+-		current container has the "is_slot" parameter set - that way, all actions
+-		run as a slot would automatically be switched to "simple" mode.
+-		
+-		Even if you don't need any of the above and this class remains empty, it is
+-		strongly recommended you keep it. There shall come the day where you are
+-		happy to have it this way ;)
+-	*/
++	/**
++	 * Execute any business logic for Console output types
++	 *
++	 * Ensures that executeConsole exists and console requests implement it
++	 *
++	 * @param      AgaviRequestDataHolder The action's request data holder.
++	 *
++	 * @author     Ross Lawley <ross.lawley@gmail.com>
++	 * @since      0.11.RC4
++	 *
++	 * @version    $Id$
++	 */
++	public function executeConsole(AgaviRequestDataHolder $rd)
++	{
++		throw new AgaviViewException(sprintf(
++			'The Action "%1$s" does not implement an "executeConsole()" method to '.
++			"manage the business logic for the action. \r\n".
++			'It is recommended that you change the code of the method "executeConsole()"'.
++			'in the base Action "%4$s" that is throwing this exception to deal with this '.
++			"situation in a more appropriate manner. \r\n".
++			"This ensures console / cron jobs are handled correctly \r\n",
++			get_class($this),
++			get_class()
++		));
++	}
+ }
+ 
+ ?>
+\ No newline at end of file
+Index: pub/cli.php
+===================================================================
+--- pub/cli.php	(revision 0)
++++ pub/cli.php	(revision 0)
+@@ -0,0 +1,49 @@
++#!/usr/local/bin/php
++<?php
++/**
++ * Agavi Front Controller - boots the agavi app for console
++ *
++ * @package    Core
++ * @subpackage Index
++ *
++ * @author     Library House
++ * @copyright  (c) Authors
++ * @since      0.1
++ *
++ * @version    $Id$
++ */
++
++error_reporting(E_ALL | E_STRICT);
++
++// +---------------------------------------------------------------------------+
++// | An absolute filesystem path to the agavi/agavi.php script.                |
++// +---------------------------------------------------------------------------+
++require('../libs/agavi/agavi.php');
++
++// +---------------------------------------------------------------------------+
++// | An absolute filesystem path to our app/config.php script.                 |
++// +---------------------------------------------------------------------------+
++require('../app/config.php');
++
++// +---------------------------------------------------------------------------+
++// | Initialize the framework. You may pass an environment name to this method.|
++// | By default the 'development' environment sets Agavi into a debug mode.    |
++// | In debug mode among other things the cache is cleaned on every request.   |
++// +---------------------------------------------------------------------------+
++
++if (!empty($_SERVER['AGAVI_ENVIRONEMENT'])) {
++	$env = $_SERVER['AGAVI_ENVIRONEMENT'];
++} elseif (!empty($_ENV['AGAVI_ENVIRONEMENT'])) {
++	$env = $_ENV['AGAVI_ENVIRONEMENT'];
++} else {
++	$env = 'development';
++}
++
++Agavi::bootstrap($env);
++
++// +---------------------------------------------------------------------------+
++// | Call the controller's dispatch method on the default context              |
++// +---------------------------------------------------------------------------+
++AgaviContext::getInstance('console')->getController()->dispatch();
++
++?>

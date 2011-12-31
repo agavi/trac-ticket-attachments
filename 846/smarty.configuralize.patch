@@ -1,0 +1,46 @@
+Index: AgaviSmartyRenderer.class.php
+===================================================================
+--- AgaviSmartyRenderer.class.php	(リビジョン 2796)
++++ AgaviSmartyRenderer.class.php	(作業コピー)
+@@ -20,6 +20,7 @@
+  * @subpackage renderer
+  *
+  * @author     David Zﾃｼlke <dz@bitxtender.com>
++ * @author     TANAKA Koichi <tanaka@ensites.com>
+  * @copyright  Authors
+  * @copyright  The Agavi Project
+  *
+@@ -79,6 +80,8 @@
+ 	 * @return     Smarty A Smarty instance.
+ 	 *
+ 	 * @author     David Zﾃｼlke <dz@bitxtender.com>
++	 * @author     TANAKA Koichi <tanaka@ensites.com>
++	 *
+ 	 * @since      0.9.0
+ 	 */
+ 	protected function getEngine()
+@@ -120,6 +123,24 @@
+ 			$this->smarty->debugging = true;
+ 		}
+ 
++		foreach((array)$this->getParameter('smarty') AS $key => $value) {
++			if($key[0]==='_') {
++				// this is private variable.
++				throw new AgaviConfigurationException("Cannot overwrite $key, Smarty::$key is a private.");
++			}
++
++			if(!property_exists($this->smarty, $key)) {
++				throw new AgaviConfigurationException("Smarty dose not have property $key.");
++			}
++
++			if(is_array($this->smarty->$key)) {
++				// merge array
++				$this->smarty->$key = array_merge($this->smarty->$key, (array)$value);
++			} else {
++				$this->smarty->$key = $value;
++			}
++		}
++
+ 		return $this->smarty;
+ 	}
+ 

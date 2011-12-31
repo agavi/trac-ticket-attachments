@@ -1,0 +1,24 @@
+Index: src/validator/AgaviDateTimeValidator.class.php
+===================================================================
+--- src/validator/AgaviDateTimeValidator.class.php	(revision 1839)
++++ src/validator/AgaviDateTimeValidator.class.php	(working copy)
+@@ -47,7 +47,9 @@
+  *                 This can either be a string or an array. If its an string it 
+  *                 can be one of 'unix' (converts the date to a unix timestamp),
+  *                 'string' (converts it to a string using the default format), 
+- *                 'calendar' (will return the AgaviCalendar object).
++ *                 'calendar' (will return the AgaviCalendar object), 
++ *                 'DateTime' (case sensitive, will return a PHP DateTime object, 
++ *                 requires PHP 5.1.x with DateTime explicitly enabled or >= PHP 5.2).
+  *                 If it's an array it can have these keys:
+  *     'type'        The type of the format (format, time, date, datetime)
+  *     'format'      see in 'formats' above.
+@@ -185,6 +187,8 @@
+ 					$value = $cal->getUnixTimestamp();
+ 				} elseif($cast == 'string') {
+ 					$value = $tm->_d($cal);
++				} elseif($cast == 'DateTime') {
++				    $value = $cal->getNativeDateTime();
+ 				} else {
+ 					$value = $cal;
+ 				}

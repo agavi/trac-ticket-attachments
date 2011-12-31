@@ -1,0 +1,198 @@
+Index: controller/AgaviExecutionContainer.class.php
+===================================================================
+--- controller/AgaviExecutionContainer.class.php	(リビジョン 2061)
++++ controller/AgaviExecutionContainer.class.php	(作業コピー)
+@@ -99,7 +99,12 @@
+ 	 * @var        AgaviExecutionContainer The next container to execute.
+ 	 */
+ 	protected $next = null;
+-	
++    
++    /**
++     * @var        bool validation result.
++     */
++    protected $validated = null;
++
+ 	/**
+ 	 * Pre-serialization callback.
+ 	 *
+@@ -391,8 +396,67 @@
+ 		}
+ 		return $this->validationManager;
+ 	}
+-	
++
+ 	/**
++	 * Validate this container's request data.
++	 *
++	 * @return	   bool true, if validation succeeded.
++	 *
++	 * @author	   MugeSo <mugeso@mugeso.com>
++	 * @since	   0.11.0
++	 */
++	public function validateRequestData()
++	{
++		// validation sholud run only once
++		if ($this->validated === null) {
++			$validated = true;
++
++			$request = $this->context->getRequest();
++			$validationManager = $this->getValidationManager();
++			
++			// get the current action instance
++			$actionInstance = $this->getActionInstance();
++			
++			$moduleName = $this->getModuleName();
++			$actionName = $this->getActionName();
++			
++			// get the (already formatted) request method
++			$method = $request->getMethod();
++			
++			$requestData = $this->requestData;
++			
++			// get the current action validation configuration
++			$validationConfig = AgaviConfig::get('core.module_dir') . '/' . $moduleName . '/validate/' . $actionName . '.xml';
++			
++			if(is_readable($validationConfig)) {
++				// load validation configuration
++				// do NOT use require_once
++				require(AgaviConfigCache::checkConfig($validationConfig));
++			}
++			
++			// manually load validators
++			$registerValidatorsMethod = 'register' . $method . 'Validators';
++			if(!method_exists($actionInstance, $registerValidatorsMethod)) {
++				$registerValidatorsMethod = 'registerValidators';
++			}
++			$actionInstance->$registerValidatorsMethod();
++			
++			// process validators
++			$validated = $validationManager->execute($requestData);
++			
++			$validateMethod = 'validate' . $method;
++			if(!method_exists($actionInstance, $validateMethod)) {
++			$validateMethod = 'validate';
++			}
++			
++			// process manual validation
++			$this->validated = $actionInstance->$validateMethod($requestData) && $validated;
++		}
++		
++		return $this->validated;
++	}
++		
++	/**
+ 	 * Retrieve this container's request data holder instance.
+ 	 *
+ 	 * @return     AgaviRequestDataHolder The request data holder.
+@@ -697,4 +761,4 @@
+ 	}
+ }
+ 
+-?>
+\ No newline at end of file
++?>
+Index: filter/AgaviExecutionFilter.class.php
+===================================================================
+--- filter/AgaviExecutionFilter.class.php	(リビジョン 2061)
++++ filter/AgaviExecutionFilter.class.php	(作業コピー)
+@@ -481,14 +481,15 @@
+ 	/**
+ 	 * Execute the Action
+ 	 *
+-	 * @param      AgaviExecutionContainer The current execution container.
++	 * @param	   AgaviExecutionContainer The current execution container.
+ 	 *
+-	 * @return     mixed The processed View information returned by the Action.
++	 * @return	   mixed The processed View information returned by the Action.
+ 	 *
+-	 * @throws     AgaviViewException If the returned View does not exist.
++	 * @throws	   AgaviViewException If the returned View does not exist.
+ 	 *
+-	 * @author     David Zülke <dz@bitxtender.com>
+-	 * @since      0.11.0
++	 * @author	   David Zülke <dz@bitxtender.com>
++	 * @author	   MugeSo <mugeso@mugeso.com>
++	 * @since	   0.11.0
+ 	 */
+ 	protected function runAction(AgaviExecutionContainer $container)
+ 	{
+@@ -496,7 +497,6 @@
+ 
+ 		$controller = $this->context->getController();
+ 		$request = $this->context->getRequest();
+-		$validationManager = $container->getValidationManager();
+ 
+ 		// get the current action instance
+ 		$actionInstance = $container->getActionInstance();
+@@ -507,7 +507,7 @@
+ 
+ 		// get the (already formatted) request method
+ 		$method = $request->getMethod();
+-
++		
+ 		$requestData = $container->getRequestData();
+ 
+ 		$useGenericMethods = false;
+@@ -522,41 +522,16 @@
+ 			// get the default view
+ 			$viewName = $actionInstance->getDefaultViewName();
+ 		} else {
+-			// set default validated status
+-			$validated = true;
+ 
+-			// get the current action validation configuration
+-			$validationConfig = AgaviConfig::get('core.module_dir') . '/' . $moduleName . '/validate/' . $actionName . '.xml';
++			if($container->validateRequestData()) {
+ 
+-			if(is_readable($validationConfig)) {
+-				// load validation configuration
+-				// do NOT use require_once
+-				require(AgaviConfigCache::checkConfig($validationConfig));
+-			}
+-
+-			// manually load validators
+-			$registerValidatorsMethod = 'register' . $method . 'Validators';
+-			if(!method_exists($actionInstance, $registerValidatorsMethod)) {
+-				$registerValidatorsMethod = 'registerValidators';
+-			}
+-			$actionInstance->$registerValidatorsMethod();
+-
+-			// process validators
+-			$validated = $validationManager->execute($requestData);
+-
+-			$validateMethod = 'validate' . $method;
+-			if(!method_exists($actionInstance, $validateMethod)) {
+-				$validateMethod = 'validate';
+-			}
+-
+-			// prevent access to Request::getParameters()
+-			// process manual validation
+-			if($actionInstance->$validateMethod($requestData) && $validated) {
+ 				// execute the action
+ 				$key = $request->toggleLock();
+ 				$viewName = $actionInstance->$executeMethod($requestData);
+ 				$request->toggleLock($key);
++
+ 			} else {
++
+ 				// validation failed
+ 				$handleErrorMethod = 'handle' . $method . 'Error';
+ 				if(!method_exists($actionInstance, $handleErrorMethod)) {
+@@ -565,13 +540,15 @@
+ 				$key = $request->toggleLock();
+ 				$viewName = $actionInstance->$handleErrorMethod($requestData);
+ 				$request->toggleLock($key);
++
+ 			}
++			
+ 		}
+ 
+ 		if(is_array($viewName)) {
+ 			// we're going to use an entirely different action for this view
+ 			$viewModule = $viewName[0];
+-			$viewName   = $viewName[1];
++			$viewName	= $viewName[1];
+ 		} elseif($viewName !== AgaviView::NONE) {
+ 			// use a view related to this action
+ 			$viewName = $actionName . $viewName;

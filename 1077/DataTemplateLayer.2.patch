@@ -1,0 +1,231 @@
+Index: src/config/defaults/autoload.xml
+===================================================================
+--- src/config/defaults/autoload.xml	(revision 3967)
++++ src/config/defaults/autoload.xml	(working copy)
+@@ -266,6 +266,7 @@
+ 			<autoload name="AgaviXoroperatorValidator">%core.agavi_dir%/validator/AgaviXoroperatorValidator.class.php</autoload>
+ 
+ 			<!-- agavi/view -->
++			<autoload name="AgaviDataTemplateLayer">%core.agavi_dir%/view/AgaviDataTemplateLayer.class.php</autoload>
+ 			<autoload name="AgaviFileTemplateLayer">%core.agavi_dir%/view/AgaviFileTemplateLayer.class.php</autoload>
+ 			<autoload name="AgaviStreamTemplateLayer">%core.agavi_dir%/view/AgaviStreamTemplateLayer.class.php</autoload>
+ 			<autoload name="AgaviTemplateLayer">%core.agavi_dir%/view/AgaviTemplateLayer.class.php</autoload>
+Index: src/view/AgaviDataTemplateLayer.class.php
+===================================================================
+--- src/view/AgaviDataTemplateLayer.class.php	(revision 0)
++++ src/view/AgaviDataTemplateLayer.class.php	(revision 0)
+@@ -0,0 +1,129 @@
++<?php
++
++// +---------------------------------------------------------------------------+
++// | This file is part of the Agavi package.                                   |
++// | Copyright (c) 2005-2009 the Agavi Project.                                |
++// |                                                                           |
++// | For the full copyright and license information, please view the LICENSE   |
++// | file that was distributed with this source code. You can also view the    |
++// | LICENSE file online at http://www.agavi.org/LICENSE.txt                   |
++// |   vi: set noexpandtab:                                                    |
++// |   Local Variables:                                                        |
++// |   indent-tabs-mode: t                                                     |
++// |   End:                                                                    |
++// +---------------------------------------------------------------------------+
++
++/**
++ * Template layer implementation for templates fetched
++ * using a PHP data protocol wraper or temporary file.
++ *
++ * @package    agavi
++ * @subpackage view
++ *
++ * @author     TANAKA Koichi <tanaka@ensites.com>
++ * @copyright  Authors
++ * @copyright  The Agavi Project
++ *
++ * @since      1.0.1
++ *
++ * @version    $Id$
++ */
++class AgaviDataTemplateLayer extends AgaviTemplateLayer
++{
++	const TYPE_RFC2397 = 0;
++	const TYPE_TEMPFILE = 1;
++
++	/**
++	 *
++	 * @var string temporary file name
++	 */
++	private $tempfile = null;
++	
++	/**
++	 * Constructor.
++	 *
++	 * @param      array Initial parameters.
++	 *
++	 * @author     TANAKA Koichi
++	 * @since      1.0.1
++	 */
++	public function __construct(array $parameters = array())
++	{
++		parent::__construct(array_merge(array(
++			'mimetype'=>'text/plain',
++			'type'=>self::TYPE_RFC2397
++				), $parameters));
++	}
++
++	/**
++	 * Get the full, resolved stream location name to the template resource.
++	 *
++	 * @return     string A PHP stream resource identifier.
++	 *
++	 * @throws     AgaviException If the template could not be found.
++	 *
++	 * @author     TANAKA Koichi <tanaka@ensites.com>
++	 * @since      1.0.1
++	 */
++	public function getResourceStreamIdentifier()
++	{
++		$data = $this->getParameter('data');
++
++		switch($this->getParameter('type')) {
++			case self::TYPE_RFC2397:
++				$mimetype = $this->getParameter('mimetype');
++				return sprintf('data://%s;base64,%s', $mimetype, base64_encode($data));
++				break;
++			case self::TYPE_TEMPFILE:
++				return $this->saveTempfile($data);
++				break;
++		}
++	}
++
++	/**
++	 * Destructor.
++	 *
++	 * @param      array Initial parameters.
++	 *
++	 * @author     TANAKA Koichi
++	 * @since      1.0.1
++	 */
++	public function  __destruct() {
++		$this->removeTempfile();
++		parent::__destruct();
++	}
++
++	/**
++	 * Save data as temporaryfile
++	 *
++	 * @param      string data string to be saved.
++	 *
++	 * @author     TANAKA Koichi
++	 * @since      1.0.1
++	 */
++	protected function saveTempfile($data)
++	{
++		$this->removeTempfile();
++
++		$tempfile = tempnam($this->getParameter('tempfile_dir'), $this->getParameter('tempfile_prefix'));
++		file_put_contents($tempfile, $data);
++		
++		return $this->tempfile = $tempfile;
++	}
++
++	/**
++	 * Remove temprary file if it exists.
++	 *
++	 * @author     TANAKA Koichi
++	 * @since      1.0.1
++	 */
++	protected function removeTempfile()
++	{
++		if($this->tempfile && file_exists($this->tempfile)) {
++			unlink($this->tempfile);
++			$this->tempfile = null;
++		}
++	}
++}
++
++?>
+
+Index: test/config/suites.xml
+===================================================================
+--- test/config/suites.xml	(revision 3967)
++++ test/config/suites.xml	(working copy)
+@@ -25,6 +25,11 @@
+ 					<testfile>unit/routing/Ticket1051Test.php</testfile>
+ 				</testfiles>
+ 			</suite>
++			<suite name="Renderer">
++				<testfiles>
++					<testfile>unit/renderer/AgaviPhptalRendererTest.php</testfile>
++				</testfiles>
++			</suite>
+ 			<suite name="Request">
+ 				<testfiles>
+ 					<testfile>unit/request/AgaviWebRequestDataHolderParameterTest.php</testfile>
+@@ -50,6 +55,11 @@
+ 					<testfile>unit/util/AgaviArrayPathDefinitionTest.php</testfile>
+ 				</testfiles>
+ 			</suite>
++			<suite name="View">
++				<testfiles>
++					<testfile>unit/view/AgavidataTemplateLayerTest.php</testfile>
++				</testfiles>
++			</suite>
+ 		</suites>
+ 	</ae:configuration>
+ </ae:configurations>
+\ No newline at end of file
+Index: test/tests/unit/view/AgaviDataTemplateLayerTest.php
+===================================================================
+--- test/tests/unit/view/AgaviDataTemplateLayerTest.php	(revision 0)
++++ test/tests/unit/view/AgaviDataTemplateLayerTest.php	(revision 0)
+@@ -0,0 +1,49 @@
++<?php
++
++class AgaviDataTemplateLayerTest extends AgaviUnitTestCase
++{
++
++	public function testSetDataWithConstructor()
++	{
++		$layer = new AgaviDataTemplateLayer(array('data'=>'I love PHP'));
++		$layer->initialize($this->getContext());
++
++		$resourceIdentifier = $layer->getResourceStreamIdentifier();
++		$this->assertEquals('data://text/plain;base64,SSBsb3ZlIFBIUA==', $resourceIdentifier);
++	}
++
++	public function testSetDataWithInitializer()
++	{
++		$layer = new AgaviDataTemplateLayer();
++		$layer->initialize($this->getContext(), array('data'=>'I love PHP'));
++
++		$resourceIdentifier = $layer->getResourceStreamIdentifier();
++		$this->assertEquals('data://text/plain;base64,SSBsb3ZlIFBIUA==', $resourceIdentifier);
++	}
++
++	public function testSetDataWithSetParameter()
++	{
++		$layer = new AgaviDataTemplateLayer();
++		$layer->initialize($this->getContext());
++		$layer->setParameter('data', 'I love PHP');
++
++		$resourceIdentifier = $layer->getResourceStreamIdentifier();
++		$this->assertEquals('data://text/plain;base64,SSBsb3ZlIFBIUA==', $resourceIdentifier);
++	}
++
++	public function testTempfile()
++	{
++		$layer = new AgaviDataTemplateLayer();
++		$layer->initialize($this->getContext());
++		$layer->setParameter('type', AgaviDataTemplateLayer::TYPE_TEMPFILE);
++		$layer->setParameter('data', 'I love PHP');
++		
++		$filename = $layer->getResourceStreamIdentifier();
++		$this->assertFileExists($filename);
++		$this->assertEquals('I love PHP', file_get_contents($filename));
++
++		unset($layer);
++		$this->assertFileNotExists($filename);
++	}
++}
++?>
+

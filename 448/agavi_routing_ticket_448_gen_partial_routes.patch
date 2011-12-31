@@ -1,0 +1,39 @@
+Index: routing/AgaviWebRouting.class.php
+===================================================================
+--- routing/AgaviWebRouting.class.php	(Revision 4498)
++++ routing/AgaviWebRouting.class.php	(Arbeitskopie)
+@@ -296,6 +296,34 @@
+ 				}
+ 				$params = array_merge($this->inputParameters, $params);
+ 			}
++			elseif ('+' === $route{0}) {
++			    $route = substr($route, 1);
++			    if($this->enabled) {
++					$routes = array_reverse($req->getAttribute('matched_routes', 'org.agavi.routing'));
++					$routeMatches = array();
++					foreach($routes as $myRoute) {
++						$r = $this->routes[$myRoute];
++						$routeMatches = array_merge($routeMatches, $r['matches']);
++					}
++					$params = array_merge($routeMatches, $params);
++					/**
++					 * we have to insert the given route at the place 
++					 * in the routing where it belongs, the order is important!
++					 */ 
++					$routeOrder = array_keys($this->routes);
++					$routeTableIndex = array_search($route, $routeOrder); 
++					
++					$insertPosition = false;
++					for ($i = 0; $i < count($routes) && false === $insertPosition; ++$i) {
++					    if ($routeTableIndex < array_search($routes[$i], $routeOrder)) {
++					        $insertPosition = $i + 1;
++					    }
++					}
++					array_splice($routes, $insertPosition, 0, array($route));
++					$route = join('+', $routes);
++				}
++				$params = array_merge($this->inputParameters, $params);
++			}
+ 
+ 			$routes = $this->getAffectedRoutes($route);
+ 

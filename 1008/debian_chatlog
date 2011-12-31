@@ -1,0 +1,126 @@
+[15:28] Wombert: there is no web interface for reporting bugs?
+[15:28] eptalon: Wombert: bugs.debian.org?
+[15:29] Wombert: well, I can send an email there
+[15:29] Wombert: in a nerd-ish format...
+[15:29] jelly-home: Wombert: that's how it goes.  You can use a tool like reportbug to help in generating the mail
+[15:29] Wombert: jelly-home: I'm not a debian user
+[15:29] Wombert: it's just that... well
+[15:29] Wombert: once again, the php5 package is completely ruined
+[15:30] eptalon: Wombert: http://www.debian.org/Bugs/Reporting
+[15:30] Wombert: and I'm kind of sick of implementing workarounds in my software
+[15:30] Wombert: and... yeah
+[15:30] Wombert: yeah I'll do that, eptalon
+[15:30] themill: Wombert: what's wrong with it?
+[15:30] eptalon: Wombert: or use reportbug.
+[15:30] Wombert: themill: well, in olden times, it was incorrectly backported security fixes that ruined streams, for instance
+[15:30] jelly-home: Wombert: eh, sounds like you are a debian user or you know one :-)
+[15:30] Wombert: this time, it's http://lists.alioth.debian.org/pipermail/pkg-php-maint/2008-November/004670.html
+[15:31] jelly-home: Wombert: what did it completely break?
+[15:31] Wombert: with that change (why isn't that being contributed to PHP instead, anyway?), there is no way to know the actual timezone
+[15:31] themill: Wombert: php's TZ handling is braindead. You can't blame debian for that
+[15:31] Wombert: it keeps returning System/Localtime
+[15:31] Wombert: instead of the resolved timezone
+[15:32] Wombert: and I need to know the *actual* name so I can use the timezone, make calculations with it etc in third party code (that doesn't use internal timezone functions)
+[15:32] Wombert: (because, as themill pointed out, PHP's stuff is hopeless)
+[15:32] jelly-home: Wombert: the mail says "Discussed upstream but was not desired."
+[15:33] themill: Wombert: you have to actually set the TZ somewhere and istr this has been the case since php 5.1
+[15:33] Wombert: I can craete a timezone with System/Localtime, and get the offset, but that doesn't help me once I start making calculations where I need DST info etc
+[15:33] jelly-home: Wombert: also, the mail suggests setting data.timezone or TZ env.var
+[15:34] Wombert: I know
+[15:34] Wombert: but we're maintaining a framework
+[15:34] Wombert: with users that are sometimes... clueless
+[15:34] jelly-home: how does it not apply to your situation?
+[15:34] Wombert: look
+[15:34] Wombert: we're using date_default_timezone_get() to get the system tz
+[15:35] Wombert: which is fine on all systems, and returns Europe/London or something as a last resort, except... for that guy, on debian (?), where it returns System/Localtime
+[15:35] Wombert: System/Localtime is not in the tzinfo database
+[15:35] Wombert: so we cannot get info on it, or make an instance of our own timezone object using that timezone
+[15:36] Wombert: I can ask PHP for the abbreviated timezone name (NOVT), but that's not authoritative
+[15:36] Wombert: I need the actual name, Asia/Novosibirsk
+[15:37] jelly-home: Wombert: I guess you could parse /etc/localtime when you get the System/Localtime hack
+[15:37] Wombert: jelly-home: I don't *want* to
+[15:37] themill: Wombert: date_default_timezone_get() can't be trusted anyway. If you get System/Localtime just assume it's UTC or something and tell the user to actually configure things properly.
+[15:38] Wombert: themill: uh huh
+[15:38] themill: Wombert: actually, I always require PHP TZ things to be configured by the user. It defaults to Europe/London unless the user sets it to something different. There's no point in trying to guess through php.
+[15:40] themill: Wombert: the server time is meaningless anyway. You want the time where the user is or the time at the location the user is interested in. They can be 3 different things.
+[15:40] Wombert: http://packages.debian.org/changelogs/pool/main/p/php5/php5_5.2.6.dfsg.1-0.1~lenny1/changelog
+[15:40] Wombert: there it is, themill / jelly-home
+[15:41] themill: Wombert: err... yes, that's a debian changelog. What about it?
+[15:41] Wombert: it says the patch was included in that package
+[15:42] Wombert: why is stuff like that done
+[15:42] Wombert: I mean, why isn't such a change contributed to PHP
+[15:42] Wombert: it breaks applications
+[15:43] jelly-home: Wombert: the redhat author wrote that upstream didn't like it
+[15:43] valdyn: Wombert: that patch is in readhat too?
+[15:43] Wombert: I have no idea
+[15:43] jelly-home: Wombert: you pasted that mail yourself
+[15:44] jelly-home: Wombert: I guess if your app is large enough, you should probably take it to the php-maint list and discuss possible solutions
+[15:44] Wombert: jelly-home: let me check that
+[15:44] jelly-home: Wombert: "Discussed upstream but was not desired."
+[15:44] Wombert: jelly-home: wait, the size of my application is a factor for considering bugfixes?
+[15:45] Wombert: great!
+[15:45] Assid: jelly belly!
+[15:45] valdyn: Wombert: popularity, not codesize
+[15:45] jelly-home: Wombert: the number of affected users matters yes
+[15:45] Wombert: really?
+[15:45] Wombert: awesome
+[15:45] jelly-home: Wombert: that patch fixes problems for some users
+[15:45] Wombert: so PHP is ruined to the point where it's not operaating consistently across platforms anymore
+[15:45] Wombert: and
+[15:45] stoned: good morning
+[15:45] Wombert: holy cow
+[15:45] Wombert: you have to be joking
+[15:46] valdyn: Wombert: I'm not sure its supposed to
+[15:46] stoned: ##php
+[15:46] jelly-home: Wombert: changelog points to http://bugs.debian.org/447174 http://bugs.debian.org/471104; I have not investiagted in detail
+[15:52] bzed: Wombert: php is insanely broken by design, including the time zone related functions. blame upstream for the inconsistent behaviour and find a way to work around it.
+[15:53] jelly-home: bzed: there's a design behind php?
+[15:54] bzed: people argue ther eis...
+[15:54] Wombert: look
+[15:54] Wombert: the point is
+[15:54] Wombert: I then format dates
+[15:54] Wombert: or output the timezone name
+[15:54] Wombert: whichever
+[15:54] Wombert: and it returns System/Localtime
+[15:54] Wombert: and that works on debian, but nowhere else
+[15:54] Wombert: ever heard about "interoperability"?
+[15:54] Wombert: -about +of
+[15:54] Wombert: it's broken, period
+[15:54] Wombert: and it's a bad idea to begin with
+[15:55] bzed: Wombert: read http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=471104 - php ships their own, broken and outdated timezone information
+[15:55] bzed: that's broken
+[15:55] Wombert: that's wrong, bzed
+[15:55] Wombert: you can easily update PHP's timezone info through pecl
+[15:55] Wombert: that's the mechanism for it
+[15:56] jelly-home: Wombert: it requires user intervention, though
+[15:57] bzed: Wombert: sorry, but using included time zone data on systems where the system is able to provide it, is insanely broken.
+[15:58] Wombert: bzed: look
+[15:58] Wombert: that patch
+[15:58] Wombert: breaks apps
+[15:58] jelly-home: Wombert: we know.  It also unbreaks tz data.
+[15:58] Wombert: it should *maybe* return something useful when asked for the actual timezone name (it does for the abbreviation)
+[15:59] Wombert: jelly-home: the thing is
+[15:59] bzed: Wombert: depending onthe actual timezone is broken, too.
+[15:59] Wombert: I can do date_default_timezone_set() to "fix" it for me
+[15:59] Wombert: or something
+[15:59] Wombert: but
+[15:59] Wombert: gah
+[16:00] Wombert: bzed: pardon?
+[16:00] jelly-home: Wombert: you really want to take this to pkg-php-maint@lists.alioth.debian.org; this channel is pretty much end-user support
+[16:00] bzed: Wombert: use a unix time stamp and apply a time zone on it, if you really need to.
+[16:01] jelly-home: Wombert: it's likely redhat's or fedora's php will be broken in a similar way
+[16:02] Wombert: great
+[16:02] Wombert: maybe that guy should have listened to the php devs that declined it
+[16:02] • jelly-home doesn't use debian's php for other reasons
+[16:02] bzed: Wombert: again, blame php upstream for it.
+[16:02] Wombert: bzed: I'd like to blame debian
+[16:02] Wombert: because it's broken there
+[16:02] bzed: write a bug report.
+[16:02] Wombert: yeah
+[16:03] Wombert: yeah
+[16:04] Wombert: awesome
+[16:04] Wombert: https://bugzilla.redhat.com/show_bug.cgi?id=469532
+[16:06] bzed: Wombert: read through the bug, understand it, and blame php. neither a fault of redhat nor of debian.
+[16:06] Wombert: bzed: maybe the patch is a good idea; the implementaiton however is useless
+[16:06] bzed: Wombert: the way these things are handled in php are insanely broken, the patch makes things better, nothign else.
+[16:07] bzed: Wombert: but again, this is thr wrong place to discuss it, either send a bug report, or diskuss it on the maintainer mailing list

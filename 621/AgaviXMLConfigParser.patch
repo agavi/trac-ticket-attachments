@@ -1,0 +1,10 @@
+--- agavi/config/AgaviXmlConfigParser.class.php	2007-11-13 11:53:16.000000000 +0100
++++ agavi.new/config/AgaviXmlConfigParser.class.php	2007-11-13 11:53:34.000000000 +0100
+@@ -148,6 +148,7 @@
+ 		}
+ 		
+ 		$doc->xinclude();
++		$doc->xinclude();
+ 		
+ 		if(libxml_get_last_error() !== false) {
+ 			$throw = false;

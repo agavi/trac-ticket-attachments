@@ -1,0 +1,285 @@
+Index: controller/AgaviExecutionContainer.class.php
+===================================================================
+--- controller/AgaviExecutionContainer.class.php	(リビジョン 2061)
++++ controller/AgaviExecutionContainer.class.php	(作業コピー)
+@@ -99,8 +99,13 @@
+ 	 * @var        AgaviExecutionContainer The next container to execute.
+ 	 */
+ 	protected $next = null;
+-	
++    
+ 	/**
++	 * @var        bool validation result.
++	 */
++	protected $validated = null;
++
++	/**
+ 	 * Pre-serialization callback.
+ 	 *
+ 	 * Will set the name of the context instead of the instance, and the name of
+@@ -190,6 +195,7 @@
+ 	 * @return     AgaviResponse The "real" response.
+ 	 *
+ 	 * @author     David Zülke <dz@bitxtender.com>
++	 * @author     MugeSo <mugeso@mugeso.com>
+ 	 * @since      0.11.0
+ 	 */
+ 	public function execute()
+@@ -301,6 +307,14 @@
+ 				if($this->arguments !== null) {
+ 					$this->requestData->merge($this->arguments);
+ 				}
++
++				// validate request data
++				$validated = $this->validateRequestData();
++
++				if ($validated) {
++					// initialize the action with request data
++					$this->actionInstance->initializeWithRequestData($this->requestData);
++				}
+ 			
+ 				// create a new filter chain
+ 				$fcfi = $this->context->getFactoryInfo('filter_chain');
+@@ -312,7 +326,7 @@
+ 					// global and module filters, otherwise skip them
+ 
+ 					// does this action require security?
+-					if(AgaviConfig::get('core.use_security', false) && $this->actionInstance->isSecure()) {
++					if(AgaviConfig::get('core.use_security', false) && ($validated ? $this->actionInstance->isSecureWithRequestData($this->requestData) : $this->actionInstance->isSecure())) {
+ 						// register security filter
+ 						$filterChain->register($controller->getFilter('security'));
+ 					}
+@@ -391,8 +405,68 @@
+ 		}
+ 		return $this->validationManager;
+ 	}
+-	
++
+ 	/**
++	 * Validate this container's request data.
++	 *
++	 * @return     bool true, if validation succeeded.
++	 *
++	 * @author     MugeSo <mugeso@mugeso.com>
++	 * @since      0.11.0
++	 */
++	public function validateRequestData()
++	{
++		// validation sholud run only once
++		if ( $this->validated===null) {
++			$validated = true;
++
++			$request = $this->context->getRequest();
++
++			// get the (already formatted) request method
++			$method = $request->getMethod();
++		
++			$validationManager = $this->getValidationManager();
++			
++			// get the current action instance
++			$actionInstance = $this->getActionInstance();
++			
++			$moduleName = $this->getModuleName();
++			$actionName = $this->getActionName();
++						
++			$requestData = $this->requestData;
++			
++			// get the current action validation configuration
++			$validationConfig = AgaviConfig::get('core.module_dir') . '/' . $moduleName . '/validate/' . $actionName . '.xml';
++			
++			if(is_readable($validationConfig)) {
++				// load validation configuration
++				// do NOT use require_once
++				require(AgaviConfigCache::checkConfig($validationConfig));
++			}
++			
++			// manually load validators
++			$registerValidatorsMethod = 'register' . $method . 'Validators';
++			if(!method_exists($actionInstance, $registerValidatorsMethod)) {
++				$registerValidatorsMethod = 'registerValidators';
++			}
++			$actionInstance->$registerValidatorsMethod();
++			
++			// process validators
++			$validated = $validationManager->execute($requestData);
++			
++			$validateMethod = 'validate' . $method;
++			if(!method_exists($actionInstance, $validateMethod)) {
++			$validateMethod = 'validate';
++			}
++			
++			// process manual validation
++			$this->validated = $actionInstance->$validateMethod($requestData) && $validated;
++		}
++		
++		return $this->validated;
++	}
++		
++	/**
+ 	 * Retrieve this container's request data holder instance.
+ 	 *
+ 	 * @return     AgaviRequestDataHolder The request data holder.
+@@ -697,4 +771,4 @@
+ 	}
+ }
+ 
+-?>
+\ No newline at end of file
++?>
+Index: filter/AgaviSecurityFilter.class.php
+===================================================================
+--- filter/AgaviSecurityFilter.class.php	(リビジョン 2061)
++++ filter/AgaviSecurityFilter.class.php	(作業コピー)
+@@ -40,6 +40,7 @@
+ 	 * @param      AgaviFilterChain        A FilterChain instance.
+ 	 * @param      AgaviExecutionContainer The current execution container.
+ 	 *
++	 * @author     MugeSo <mugeso@mugeso.com>
+ 	 * @author     David Zülke <dz@bitxtender.com>
+ 	 * @author     Sean Kerr <skerr@mojavi.org>
+ 	 * @since      0.9.0
+@@ -56,8 +57,16 @@
+ 		$actionInstance = $container->getActionInstance();
+ 
+ 		// get the credential required for this action
+-		$credential = $actionInstance->getCredentials();
++		if($container->validateRequestData()) {
++			// validated, now can use request data
++			$credential = $actionInstance->getCredentialsWithRequestData($container->getRequestData());
+ 
++		} else {
++
++			// not validated, should not use request data
++			$credential = $actionInstance->getCredentials();
++		}
++
+ 		// credentials can be anything you wish; a string, array, object, etc.
+ 		// as long as you add the same exact data to the user as a credential,
+ 		// it will use it and authorize the user as having the credential
+Index: filter/AgaviExecutionFilter.class.php
+===================================================================
+--- filter/AgaviExecutionFilter.class.php	(リビジョン 2061)
++++ filter/AgaviExecutionFilter.class.php	(作業コピー)
+@@ -488,6 +488,7 @@
+ 	 * @throws     AgaviViewException If the returned View does not exist.
+ 	 *
+ 	 * @author     David Zülke <dz@bitxtender.com>
++	 * @author     MugeSo <mugeso@mugeso.com>
+ 	 * @since      0.11.0
+ 	 */
+ 	protected function runAction(AgaviExecutionContainer $container)
+@@ -496,7 +497,6 @@
+ 
+ 		$controller = $this->context->getController();
+ 		$request = $this->context->getRequest();
+-		$validationManager = $container->getValidationManager();
+ 
+ 		// get the current action instance
+ 		$actionInstance = $container->getActionInstance();
+@@ -522,36 +522,9 @@
+ 			// get the default view
+ 			$viewName = $actionInstance->getDefaultViewName();
+ 		} else {
+-			// set default validated status
+-			$validated = true;
+ 
+-			// get the current action validation configuration
+-			$validationConfig = AgaviConfig::get('core.module_dir') . '/' . $moduleName . '/validate/' . $actionName . '.xml';
++			if($container->validateRequestData()) {
+ 
+-			if(is_readable($validationConfig)) {
+-				// load validation configuration
+-				// do NOT use require_once
+-				require(AgaviConfigCache::checkConfig($validationConfig));
+-			}
+-
+-			// manually load validators
+-			$registerValidatorsMethod = 'register' . $method . 'Validators';
+-			if(!method_exists($actionInstance, $registerValidatorsMethod)) {
+-				$registerValidatorsMethod = 'registerValidators';
+-			}
+-			$actionInstance->$registerValidatorsMethod();
+-
+-			// process validators
+-			$validated = $validationManager->execute($requestData);
+-
+-			$validateMethod = 'validate' . $method;
+-			if(!method_exists($actionInstance, $validateMethod)) {
+-				$validateMethod = 'validate';
+-			}
+-
+-			// prevent access to Request::getParameters()
+-			// process manual validation
+-			if($actionInstance->$validateMethod($requestData) && $validated) {
+ 				// execute the action
+ 				$key = $request->toggleLock();
+ 				$viewName = $actionInstance->$executeMethod($requestData);
+Index: action/AgaviAction.class.php
+===================================================================
+--- action/AgaviAction.class.php	(リビジョン 2061)
++++ action/AgaviAction.class.php	(作業コピー)
+@@ -85,6 +85,23 @@
+ 	}
+ 
+ 	/**
++	 * Retrieve the credential required to access this action,
++     * handeling request data.
++	 *
++	 * @param      AgaviRequestDataHolder The action's request data holder.
++	 *
++	 * @return     mixed Data that indicates the level of security for this
++	 *             action.
++	 *
++	 * @author     MugeSo <mugeso@mugeso.com>
++	 * @since      0.11.0
++	 */
++	public function getCredentialsWithRequestData(AgaviRequestDataHolder $rd)
++	{
++		return $this->getCredentials();
++	}
++
++	/**
+ 	 * Execute any post-validation error application logic.
+ 	 *
+ 	 * @param      AgaviRequestDataHolder The action's request data holder.
+@@ -120,6 +137,18 @@
+ 	}
+ 
+ 	/**
++	 * Initialize this action with requestData.
++	 *
++	 * @param      AgaviRequestDataHolder The action's request data holder.
++	 *
++	 * @author     MugeSo <mugeso@mugeso.com>
++	 * @since      0.11.0
++	 */
++	public function initializeWithRequestData(AgaviRequestDataHolder $rd)
++	{
++	}
++
++	/**
+ 	 * Indicates that this action requires security.
+ 	 *
+ 	 * @return     bool true, if this action requires security, otherwise false.
+@@ -133,6 +162,21 @@
+ 	}
+ 
+ 	/**
++	 * Indicates that this action requires security, handeling request data. 
++	 *
++	 * @param      AgaviRequestDataHolder The action's request data holder.
++	 *
++	 * @return     bool true, if this action requires security, otherwise false.
++	 *
++	 * @author     MugeSo <mugeso@mugeso.com>
++	 * @since      0.11.0
++	 */
++	public function isSecureWithRequestData(AgaviRequestDataHolder $rd)
++	{
++		return $this->isSecure();
++	}
++
++	/**
+ 	 * Whether or not this action is "simple", i.e. doesn't use validation etc.
+ 	 *
+ 	 * @return     bool true, if this action should act in simple mode, or false.

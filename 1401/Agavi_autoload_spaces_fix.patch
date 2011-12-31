@@ -1,0 +1,27 @@
+Index: samples/app/config/autoload.xml
+===================================================================
+--- samples/app/config/autoload.xml	(revision 4782)
++++ samples/app/config/autoload.xml	(working copy)
+@@ -8,7 +8,9 @@
+ 			
+ 			<autoload name="AgaviSampleAppLanguageRoutingCallback">%core.lib_dir%/routing/AgaviSampleAppLanguageRoutingCallback.class.php</autoload>
+ 			
+-			<autoload name="AgaviSampleAppUser">%core.lib_dir%/user/AgaviSampleAppUser.class.php</autoload>
++			<autoload name="AgaviSampleAppUser">
++			%core.lib_dir%/user/AgaviSampleAppUser.class.php
++			</autoload>
+ 			
+ 			<autoload name="AgaviSampleAppProductValidator">%core.lib_dir%/validator/AgaviSampleAppProductValidator.class.php</autoload>
+ 		</autoloads>
+Index: src/config/AgaviAutoloadConfigHandler.class.php
+===================================================================
+--- src/config/AgaviAutoloadConfigHandler.class.php	(revision 4782)
++++ src/config/AgaviAutoloadConfigHandler.class.php	(working copy)
+@@ -65,6 +65,7 @@
+ 			foreach($configuration->get('autoloads') as $autoload) {
+ 				// we can have variables in the filename
+ 				$file = AgaviToolkit::expandDirectives($autoload->getValue());
++				$file = trim($file);
+ 				// we need the filename w/o app dir prepended since the file could 
+ 				// be placed in the include path
+ 				$originalFile = $file;

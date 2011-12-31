@@ -1,0 +1,13 @@
+Index: AgaviRouting.class.php
+===================================================================
+--- AgaviRouting.class.php	(revision 1742)
++++ AgaviRouting.class.php	(working copy)
+@@ -278,7 +278,7 @@
+ 			}
+ 
+ 
+-			if(!isset($options['defaults'][$name]) && ($param['pre'] || $param['val'] || $param['post'])) {
++			if(!isset($options['defaults'][$name]) && (isset($param['pre']) || isset($param['val']) || isset($param['post']))) {
+ 				unset($param['is_optional']);
+ 				$options['defaults'][$name] = $param;
+ 			}

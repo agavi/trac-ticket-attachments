@@ -1,0 +1,29 @@
+Index: AgaviWebRouting.class.php
+===================================================================
+--- AgaviWebRouting.class.php	(revision 1808)
++++ AgaviWebRouting.class.php	(working copy)
+@@ -212,14 +212,17 @@
+ 		
+ 		if($route === null) {
+ 			if(AgaviConfig::get('core.use_routing')) {
+-				$routes = array_reverse($req->getAttribute('matched_routes', 'org.agavi.routing'));
+-				$route = join('+', $routes);
+-				$routeMatches = array();
+-				foreach($routes as $myRoute) {
+-					$r = $this->routes[$myRoute];
+-					$routeMatches = array_merge($routeMatches, $r['matches']);
++				$routesArray = $req->getAttribute('matched_routes', 'org.agavi.routing');
++				if (is_array($routesArray)) {
++					$routes = array_reverse($routesArray);
++					$route = join('+', $routes);
++					$routeMatches = array();
++					foreach($routes as $myRoute) {
++						$r = $this->routes[$myRoute];
++						$routeMatches = array_merge($routeMatches, $r['matches']);
++					}
++					$params = array_merge($routeMatches, $params);
+ 				}
+-				$params = array_merge($routeMatches, $params);
+ 			}
+ 			$params = array_merge($this->inputParameters, $params);
+ 		}

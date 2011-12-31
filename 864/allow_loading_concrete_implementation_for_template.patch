@@ -1,0 +1,15 @@
+Index: AgaviDoctrineDatabase.class.php
+===================================================================
+--- AgaviDoctrineDatabase.class.php	(revision 2908)
++++ AgaviDoctrineDatabase.class.php	(working copy)
+@@ -137,6 +137,10 @@
+ 				$this->doctrineManager->setAttribute($attributeName, $attributeValue);
+ 			}
+ 			
++			foreach((array)$this->getParameter('templates_implementation_map', array()) as $templateName => $concreteImpl) {
++				$this->doctrineManager->setImpl($templateName, $concreteImpl);
++			}
++ 
+ 			Doctrine::loadModels($this->getParameter('load_models')); 
+ 			
+ 			foreach((array)$this->getParameter('bind_components', array()) as $componentName) {

@@ -1,0 +1,313 @@
+Index: src/request/AgaviUploadedFile.class.php
+===================================================================
+--- src/request/AgaviUploadedFile.class.php	(revision 4550)
++++ src/request/AgaviUploadedFile.class.php	(working copy)
+@@ -21,6 +21,7 @@
+  * @subpackage request
+  *
+  * @author     David Zülke <dz@bitxtender.com>
++ * @author     Niklas Närhinen <niklas@narhinen.net>
+  * @copyright  Authors
+  * @copyright  The Agavi Project
+  *
+@@ -28,7 +29,7 @@
+  *
+  * @version    $Id$
+  */
+-class AgaviUploadedFile extends ArrayObject
++class AgaviUploadedFile implements ArrayAccess
+ {
+ 	/**
+ 	 * @var        array An array to map get* method name fragments to indices.
+@@ -43,16 +44,20 @@
+ 	);
+ 	
+ 	/**
++	 * @var        array An array holding all data
++	 **/
++	protected $data = array();
++	
++	/**
+ 	 * Constructor.
+ 	 *
+-	 * @param      $flags int Flags, overridden to be ArrayObject::ARRAY_AS_PROPS.
++	 * @param      $array The array containing uploaded file data
+ 	 *
+-	 * @see        ArrayObject::__construct()
+-	 *
+ 	 * @author     David Zülke <dz@bitxtender.com>
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
+ 	 * @since      0.11.0
+ 	 */
+-	public function __construct($array = array(), $flags = ArrayObject::ARRAY_AS_PROPS, $iteratorClass = 'ArrayIterator')
++	public function __construct($array = array())
+ 	{
+ 		$defaults = array(
+ 			'name' => null,
+@@ -63,42 +68,162 @@
+ 			'is_uploaded_file' => true,
+ 			'moved' => false,
+ 		);
+-		parent::__construct(array_merge($defaults, $array), $flags, $iteratorClass);
++		$this->data = array_merge($defauls, $array);
+ 	}
+ 	
+ 	/**
+ 	 * Destructor. Removes the tempfile.
+ 	 *
+ 	 * @author     David Zülke <dz@bitxtender.com>
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
+ 	 * @since      0.11.0
+ 	 */
+ 	public function __destruct()
+ 	{
+ 		// must use array syntax here, ArrayObject property access does not work in destructors
+-		if(!$this['moved'] && !$this['is_uploaded_file']) {
+-			@unlink($this['tmp_name']);
++		if(!$this->data['moved'] && !$this->data['is_uploaded_file']) {
++			@unlink($this->data['tmp_name']);
+ 		}
+ 	}
+ 	
+ 	/**
+-	 * Overload to handle getName() etc calls.
++	 * Checks whether or not this key exists in the container
++	 * 
++	 * @see        ArrayAccess::offsetExists() 
+ 	 *
+-	 * @param      string The name of the method.
+-	 * @param      array  The method arguments.
++	 * @return     bool True in case key exists
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
++	 */
++	public function offsetExists($offset)
++	{
++		return isset($this->data[$offset]) || isset($this->data[self::$indexMap[$offset]]);
++	}
++	
++	/**
++	 * Retrieve the value of the container with the given key
++	 * 
++	 * @see        ArrayAccess::offsetGet()
+ 	 *
+-	 * @return     string A value.
++	 * @return     mixed The value off the container with the key
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
++	 */
++	public function offsetGet($offset)
++	{
++		if (isset(self::$indexMap[$offset])) {
++			$offset = self::$indexMap[$offset];
++		}
++		return $this->data[$offset];
++	}
++	
++	/**
++	 * Add or replace a value in the container with the given key
+ 	 *
+-	 * @author     David Zülke <dz@bitxtender.com>
+-	 * @since      0.11.0
++	 * @see        ArrayAccess::offsetSet()
++	 *
++	 * @return     void
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
+ 	 */
+-	public function __call($name, array $arguments)
++	public function offsetSet($offset, $value)
+ 	{
+-		if(substr($name, 0, 3) == 'get') {
+-			return $this[self::$indexMap[substr($name, 3)]];
++		if (isset(self::$indexMap[$offset])) {
++			$offset = self::$indexMap[$offset];
+ 		}
++		$this->data[$offset] = $value;
+ 	}
+ 	
+ 	/**
++	 * Unset a key-value-pair in the container
++	 * 
++	 * @see        ArrayAccess::offsetUnset()
++	 *
++	 * @return     void
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
++	 */
++	public function offsetUnset($offset)
++	{
++		if (isset(self::$indexMap[$offset])) {
++			$offset = self::$indexMap[$offset];
++		}
++		unset($this->data[$offset]);
++	}
++	
++	/**
++	 * Retrieve the name of the uploaded file
++	 *
++	 * @return     string The name of the uploaded file
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
++	 */
++	public function getName()
++	{
++		return $this->data['name'];
++	}
++	
++	/**
++	 * Retrieve the mime type of the uploaded file
++	 *
++	 * @return     string The mime type of the uploaded file
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
++	 */
++	public function getType()
++	{
++		return $this->data['type'];
++	}
++	
++	/**
++	 * Retrieve the size of the uploaded file in bytes
++	 *
++	 * @return     int The size of the uploaded file in bytes
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
++	 */
++	public function getSize()
++	{
++		return $this->data['size'];
++	}
++	
++	/**
++	 * Retrieve the temporary filename of the uploaded file
++	 *
++	 * @return     string The temporary filename of the uploaded file
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
++	 */
++	public function getTmpName()
++	{
++		return $this->data['tmp_name'];
++	}
++	
++	/**
++	 * Retrieve the error code associated with this file upload
++	 *
++	 * @return     int The error code for this file upload
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
++	 */
++	public function getError()
++	{
++		return $this->data['error'];
++	}
++	
++	/**
++	 * Check whether or not this is an uploaded file
++	 *
++	 * @return     bool True in case file is an uploaded file
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
++	 */
++	public function getIsUploadedFile()
++	{
++		return $this->data['is_uploaded_file'];
++	}
++	
++	/**
+ 	 * Check whether or not this file has an error.
+ 	 *
+ 	 * This only returns PHP's own information, not validator's.
+@@ -106,11 +231,12 @@
+ 	 * @return     bool True in case of UPLOAD_ERR_OK, false otherwise.
+ 	 *
+ 	 * @author     David Zülke <dz@bitxtender.com>
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
+ 	 * @since      0.11.0
+ 	 */
+ 	public function hasError()
+ 	{
+-		return $this->error !== UPLOAD_ERR_OK;
++		return $this->data['error'] !== UPLOAD_ERR_OK;
+ 	}
+ 	
+ 	/**
+@@ -119,11 +245,12 @@
+ 	 * @return     bool True if this file has not been moved yet, otherwise false.
+ 	 *
+ 	 * @author     David Zülke <dz@bitxtender.com>
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
+ 	 * @since      0.11.0
+ 	 */
+ 	public function isMovable()
+ 	{
+-		return !$this->moved;
++		return !$this->data['moved']
+ 	}
+ 	
+ 	/**
+@@ -134,6 +261,7 @@
+ 	 * @throws     AgaviException If the file has errors or has been moved.
+ 	 *
+ 	 * @author     David Zülke <dz@bitxtender.com>
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
+ 	 * @since      0.11.2
+ 	 */
+ 	public function getContents()
+@@ -142,7 +270,7 @@
+ 			throw new AgaviException('Cannot get contents of erroneous or moved file.');
+ 		}
+ 		
+-		return file_get_contents($this->tmp_name);
++		return file_get_contents($this->data['tmp_name']);
+ 	}
+ 	
+ 	/**
+@@ -155,6 +283,7 @@
+ 	 * @throws     AgaviException If the file has errors or has been moved.
+ 	 *
+ 	 * @author     David Zülke <dz@bitxtender.com>
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
+ 	 * @since      0.11.2
+ 	 */
+ 	public function getStream($mode = 'rb')
+@@ -163,7 +292,7 @@
+ 			throw new AgaviException('Cannot get contents of erroneous or moved file.');
+ 		}
+ 		
+-		return fopen($this->tmp_name, $mode);
++		return fopen($this->data['tmp_name'], $mode);
+ 	}
+ 	
+ 	/**
+@@ -179,6 +308,7 @@
+ 	 * @throws     AgaviFileException If chmod or mkdir calls failed.
+ 	 *
+ 	 * @author     David Zülke <dz@bitxtender.com>
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
+ 	 * @since      0.11.0
+ 	 */
+ 	public function move($dest, $fileMode = 0664, $create = true, $dirMode = 0775)
+@@ -210,17 +340,17 @@
+ 			throw new AgaviFileException($error);
+ 		}
+ 		
+-		if($this->is_uploaded_file) {
+-			$moved = @move_uploaded_file($this->tmp_name, $dest);
++		if($this->data['is_uploaded_file']) {
++			$moved = @move_uploaded_file($this->data->['tmp_name'], $dest);
+ 		} else {
+ 			if(is_writable($dest)) {
+ 				unlink($dest);
+ 			}
+-			$moved = @rename($this->tmp_name, $dest);
++			$moved = @rename($this->data['tmp_name'], $dest);
+ 		}
+ 		
+ 		if($moved) {
+-			$this->moved = true;
++			$this->data['moved'] = true;
+ 			// chmod our file
+ 			if(!@chmod($dest, $fileMode)) {
+ 				throw new AgaviFileException('Failed to chmod uploaded file after moving');

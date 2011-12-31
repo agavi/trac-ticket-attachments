@@ -1,0 +1,21 @@
+--- src.old/controller/AgaviExecutionContainer.class.php	2007-11-06 12:30:12.000000000 +0100
++++ src/controller/AgaviExecutionContainer.class.php	2008-02-14 13:49:31.000000000 +0100
+@@ -184,7 +184,17 @@
+ 		if($outputType === null) {
+ 			$outputType = $this->getOutputType()->getName();
+ 		}
+-		return $this->context->getController()->createExecutionContainer($moduleName, $actionName, $arguments, $outputType);
++
++		$newArguments = null;
++		if (is_null($this->arguments)) {
++			$newArguments = $arguments;
++		} else {
++			$newArguments = clone $this->arguments;
++			if (!is_null($arguments)) {
++				$newArguments->merge($arguments);
++			}
++		}
++		return $this->context->getController()->createExecutionContainer($moduleName, $actionName, $newArguments, $outputType);
+ 	}
+ 
+ 	/**

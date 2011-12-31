@@ -1,0 +1,13 @@
+Index: AgaviWebResponse.class.php
+===================================================================
+--- AgaviWebResponse.class.php	(revision 1762)
++++ AgaviWebResponse.class.php	(working copy)
+@@ -134,7 +134,7 @@
+ 			if(!preg_match('#^[^:]+://#', $location)) {
+ 				if($location[0] == '/') {
+ 					$rq = $this->context->getRequest();
+-					$location = $rq->getUrlScheme . '://' . $rq->getUrlAuthority() . $location;
++					$location = $rq->getUrlScheme() . '://' . $rq->getUrlAuthority() . $location;
+ 				} else {
+ 					$location = $this->context->getRouting()->getBaseHref() . $location;
+ 				}

@@ -1,0 +1,21 @@
+Index: AgaviDoctrineDatabase.class.php
+===================================================================
+--- AgaviDoctrineDatabase.class.php	(リビジョン 4477)
++++ AgaviDoctrineDatabase.class.php	(作業コピー)
+@@ -160,6 +160,16 @@
+ 						$attributeValue = constant($attributeValue);
+ 					} elseif(ctype_digit($attributeValue)) {
+ 						$attributeValue = (int)$attributeValue;
++					} elseif($attributeName === Doctrine::ATTR_QUERY_CACHE || $attributeName === Doctrine::ATTR_RESULT_CACHE) {
++						if(is_string($attributeValue)) {
++							$driverName = $attributeValue;
++							$driverOptions = null;
++						} elseif(is_array($attributeValue) && isset($attributeValue['driver'])) {
++							$driverName = $attributeValue;
++							$driverOptions = isset($attributeValue['options']) ? $attributeValue['options'] : null;
++						}
++						$driverClass = 'Doctrine_Cache_' . ucfirst($driverName);
++						$attributeValue = new $driverClass($driverOptions);
+ 					}
+ 					
+ 					$attributesDestination->setAttribute($attributeName, $attributeValue);

@@ -1,0 +1,33 @@
+--- mojavi.orig/controller/Controller.class.php 2005-02-08 15:58:47.496000144 -0600
++++ mojavi/controller/Controller.class.php      2005-02-08 15:58:55.528778976 -0600
+@@ -362,7 +362,22 @@
+ 
+         $file = MO_LIB_DIR . '/models/' . $modelName . 'Model.class.php';
+ 
+-        require_once($file);
++       if(file_exists($file))
++       {
++       
++                   require_once($file);
++       
++       } else
++       {
++       
++           $pattern = MO_LIB_DIR . '/' . '*' . '/models/' . $modelName .
++                      'Model.class.php';
++           $files = glob($pattern);
++       
++           // only include the first file found
++           require_once($files[0]);
++
++       }
+ 
+         $class = $modelName . 'Model';
+ 
+@@ -847,4 +862,4 @@
+ 
+ }
+ 
+-?>
+\ No newline at end of file
++?>

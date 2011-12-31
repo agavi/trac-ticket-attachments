@@ -1,0 +1,17 @@
+--- AgaviFileLoggerAppender.class.php.old       2008-04-13 09:29:00.000000000 +0000
++++ AgaviFileLoggerAppender.class.php   2008-04-13 09:28:41.000000000 +0000
+@@ -70,8 +70,12 @@
+         */
+        protected function getHandle()
+        {
+-               if(is_null($this->handle)) {
+-                       if(!is_writable(dirname($this->filename)) || (file_exists($this->filename) && !is_writable($this->filename)) || !$this->handle = fopen($this->filename, 'a')) {
++               if(is_null($this->handle)) {
++                       if (stripos($this->filename, 'php://') === 0) {
++                               if (! $this->handle = fopen($this->filename, 'w'))
++                                       throw new AgaviLoggingException('Cannot open stream ' . $this->filename . ' for writing');
++                       }
++                       elseif(!is_writable(dirname($this->filename)) || (file_exists($this->filename) && !is_writable($this->filename)) || !$this->handle = fopen($this->filename, 'a')) {
+                                throw new AgaviLoggingException('Cannot open file "' . $this->filename . '", please check permissions on file or directory.');
+                        }
+                }

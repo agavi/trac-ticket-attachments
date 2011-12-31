@@ -1,0 +1,175 @@
+Index: docs/docbook/manual.xml
+===================================================================
+--- docs/docbook/manual.xml	(revision 2187)
++++ docs/docbook/manual.xml	(working copy)
+@@ -781,21 +781,157 @@
+     <section id="system-architecture">
+       <title>System Architecture</title>
+ 
+-      <para></para>
++      <para>Agavi is an OOP application framework. All Agavi
++      applications, at least where they communicate with Agavi,
++      consist of classes and configuration. Configuration is the glue
++      between different components of your application. Much of what
++      would be expressed as code in other cases is expressed as
++      configuration in Agavi.</para>
++
++      <para>To achieve such kind of flexibility, Agavi provides and
++      uses an XML-to-PHP compiler which serves as the configuration
++      engine for the framework and its applications. The configuration
++      engine is smart about XML files and reads them only when needed,
++      most of the time relying on the compiled PHP code instead. Note
++      that despite being quite an advanced feat for a PHP application,
++      this engine is in principle replaceable.</para>
++
++      <para>Before further discussion ensues, it must be made clear
++      that when this manual makes reference to Agavi and Agavi
++      applications, it does so relating to the stock Agavi framework
++      configuration. Many Agavi components can be replaced, and some
++      are replaced often by application developers wishing to
++      implement unique features specific to their particular
++      project. Stock Agavi is an MVC Web application framework, but it
++      can be reconfigured for applications that transcend both MVC and
++      Web. The manual does not make attempts at guessing towards the
++      extent of these use cases and refers specifically to your usual,
++      as-from-the-box framework and Web applications.</para>
++
++      <para>Agavi encompasses your application and serves as the
++      dispatcher and the front controller for it. The core logic of
++      your application (domain logic) is expressed as a freeform API
++      through Models, which are invoked by your Actions (Controllers)
++      and Views. When a Web request arrives, Agavi selects and
++      executes Actions relevant for that request; every Action names a
++      View that should be responsible for its output; the resulting
++      output is collected and returned to the client. Some Actions can
++      be empty and only their View counterparts would be
++      processed.</para>
++
++      <para>Actions are determined through Routing, which is an
++      extremely powerful mechanism for mapping Web requests (and any
++      kind of requests in general) to Actions. One request may require
++      more than one Action to execute and render its output. For this
++      reason, a general response layout management mechanism and a
++      layered output mechanism is provided to your application.</para>
++
++      <para>Note that unlike most of other frameworks, especially
++      Rails and it's sprout-offs, <emphasis>Agavi makes a clear
++      distinction between views and templating, and between models and
++      database</emphasis>. In Agavi, the templating mechanism is
++      abstracted away through adapters to the point a single
++      application can successfully use different templating engines
++      simultaneosly - even on the same page. You can connect any
++      template library - or any template source - as one of the
++      rendering mechanisms used in your Agavi application. Same goes
++      for models: an Agavi Model is just an empty class. Agavi does
++      not have its own database library, instead providing a global
++      database connection service to your application, including an
++      unified configuration mechanism and adapter classes for
++      different fashions of talking to databases. You can use your
++      custom database library or grab a third party one. Doctrine and
++      Propel are especially nice when working hand-in-hand with Agavi
++      mentality. The point is, you have the choice, and Agavi Models 
++      in no way imply "database".</para>
++
++      <para>Agavi is environment and execution path. As an
++      environment, it provides configuration and a way to communicate
++      with the outside world. As an execution path, it provides a
++      predictable flow of events, facilitated through it's front-end
++      routing/dispatching facilities. These are assured through
++      Filters, which are plugins that are executed by
++      FilterChains. Filters are actually responsible for most of
++      Agavi's internal logic. As everything else in Agavi, they are
++      replaceable.</para>
++
++      <para>Additionally, Agavi has support facilities: security and
++      validation, handling of multiple request and response types, a
++      Form Population Filter (an unique Agavi feature),
++      internationalization and localization features, logging, ways to
++      express your application as a Web API to the rest of the world,
++      facilities to hook up third party libraries, session management
++      and persistent storage, caching and a bunch of other
++      helpful tools that make your life so much easier.</para>
+     </section>
+ 
+     <section id="elements-of-an-application">
+       <title>Elements of an Application</title>
+ 
+-      <para>modules</para>
++      <para>Agavi applications are organized into Modules. Modules
++      group application code. A module is contained in a directory
++      that stores configuration, Action and View code, as well as
++      templates and other module-specific stuff. All Agavi application
++      objects - Actions, Views, Models and such - can be addressed in
++      terms of a Module name and the target object's name and
++      type. Modules are generated by Agavi's build system</para>
+ 
+-      <para>actions</para>
++      <para>Actions are your application's high level user interaction
++      logic. An Action is a specifically named class that is loaded
++      and instantiated from a specifically named file. It contains
++      callback methods that are invoked during different stages of an
++      Action's lifetime and under different condition. Actions map to
++      the request types: in terms of HTTP in a Web application, an
++      Action can specify methods to behave differently under a GET and
++      a POST request. Actions also specify the runtime parameters,
++      such as security credentials. When an Action is finished
++      executing, it typically selects a corresponding View to do
++      whatever is necessary to produce the final output.</para>
+ 
+-      <para>views and templates</para>
++      <para>Views are your application's high level user presentation
++      logic. A View is a class that uses the naming conventions and
++      callback methods similar to those of Actions. Views correspond
++      to Actions; and an Action can have many Views. While Actions map
++      to request types, Views map to output types: a single View can
++      produce its output as HTML, JSON, CSV, RSS feeds and PDF files,
++      for example. An Action selects a View that should produce the
++      output; Agavi asks the View for output of the appropriate
++      type. The output type is determined in the layout mechanism,
++      through configuration and routing. For HTML, a View employs
++      Renderers to do its bidding and apply Action-specific
++      information to templates.</para>
+ 
+-      <para>models and global models</para>
++      <para>Models are where your application actually takes
++      place. Actions and Views are just user interface glue that maps
++      UI requests to actual things that happen inside your
++      application. Agavi Models are completely unrelated to database;
++      thus, in an Agavi application, you may have two different kinds
++      of models: the Agavi Models, which are wrappers around your
++      domain logic, and the application's models, which may or may not
++      be additional levels of indirection, with or without ORM or any
++      other persistence, and with or without any database access at
++      all. Agavi deals exclusively with its own high level Models. The
++      difference is easy to illustrate on an imaginary reporting
++      application that needs to render reports into PDFs and email
++      them to users: one Model would be dealing with creating a
++      Report, one would know how to convert it to PDF, and the final
++      one would know how to email people. Actions and Views would glue
++      the whole thing together.</para>
+ 
+-      <para>config files</para>
++      <para>The central place of your application is the configuration
++      files. The configuration files let Agavi know what goes where in
++      your applications. Most of things in Agavi are configurable: for
++      instance, your configuration defines whether the application is
++      active or not, is in debug mode or not, what to do when a
++      security problem occurs, how to arrange your log files, how to
++      perform localization, translation, validation of actions and
++      many other aspects of your applications. Agavi solves most of
++      the typical Web application problems for you, and all you need
++      to do is to describe the solution. The XML configuration files
++      are not actually examined on every request: they are compiled
++      into PHP code and stored in the cache. The configuration engine,
++      together with Agavi's autoloading and factory mechanisms,
++      provides a generic way to spawn objects and glue them together.</para>
+     </section>
+ 
+     <section id="environments-and-contexts">
+@@ -4732,4 +4868,4 @@
+       </section>
+     </section>
+   </chapter>
+-</book>
+\ No newline at end of file
++</book>

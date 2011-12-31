@@ -1,0 +1,27 @@
+Index: AgaviToolkit.class.php
+===================================================================
+--- AgaviToolkit.class.php	(リビジョン 2675)
++++ AgaviToolkit.class.php	(作業コピー)
+@@ -262,11 +262,12 @@
+ 	 *
+ 	 * @param      string The value to literalize.
+ 	 *
+-	 * @return     string A literalized value.
++	 * @return     mixed A literalized value.
+ 	 *
+ 	 * @author     Sean Kerr <skerr@mojavi.org>
+ 	 * @author     Dominik del Bondio <ddb@bitxtender.com>
+ 	 * @author     David Zﾃｼlke <dz@bitxtender.com>
++	 * @author     TANAKA Koichi <tanaka@ensites.com>
+ 	 * @since      0.11.0
+ 	 */
+ 	public static function literalize($value)
+@@ -295,7 +296,7 @@
+ 		}
+ 		
+ 		// numeric value
+-		return $value;
++		return $value + 0;
+ 	}
+ 	
+ 	/**

@@ -1,0 +1,19 @@
+<autoloads>
+	<autoload path="%core.LIBS_dir%/">
+		<autoload name="SmartyBase" /> <!-- implicit naming -->
+		<autoload name="PhpBase">PhpBaseLOLZOR.class.php</autoload> <!-- explicit naming -->
+	</autoload>
+	
+	<!-- DATABASE -->
+	<autoload path="%core.DATABASE_dir%/">
+		<autoload name="DoctrineDatabase"/>
+		<autoload name="PdoBase"/>
+	</autoload>
+	
+	<!-- RBAC2 -->
+	<autoload path="%core.RBAC_dir%/">
+		<autoload name="Rbac2Handler">/child/path/Rbac2Handler.php</autoload> <!-- %core.RBAC_dir%/child/path/Rbac2Handler.php -->
+		<autoload name="Rbac2Handler" path="/parent/" /> <!-- %core.RBAC_dir%/parent/Rbac2Handler.php -->
+		<autoload name="Rbac2Base"/>
+	</autoload>	
+</autoloads>	

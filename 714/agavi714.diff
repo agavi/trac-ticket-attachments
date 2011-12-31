@@ -1,0 +1,57 @@
+Index: /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/config/routing.xml
+===================================================================
+--- /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/config/routing.xml	(revision 2304)
++++ /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/config/routing.xml	(working copy)
+@@ -22,7 +22,8 @@
+ 				</routes>
+ 			</route>
+ 			<route name="secure2" pattern="^/secure2" module="Default" action="Secure2" />
+-			<route name="secure" pattern="^/secure" module="Default" action="Secure1" />
++			<route name="secure" pattern="^/secure(/{zomg:(zomg|lol)})?" module="Default" action="Secure1" callback="TestCallback">
++			</route>
+ 			
+ 			<!-- This route uses a prefix and a postfix for a value, and the entire block is optional. That means that you can omit "buy-cheap-whatever-at-agavi-dot-org" from the URL, and the route still matches! If there is no value given for the parameter "name" when you enerate a route, the entire block will be missing. Since we specified a default value here, you have to explicitly set that parameter to 'null' when generating, so it gets skipped. -->
+ 			<route name="search_engine_spam" pattern="^/products(/buy-cheap-{name:[\S\s]+}-at-agavi-dot-org)?/(id:\d+)" module="Default" action="SearchEngineSpam">
+Index: /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/config/autoload.xml
+===================================================================
+--- /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/config/autoload.xml	(revision 2304)
++++ /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/config/autoload.xml	(working copy)
+@@ -3,6 +3,7 @@
+ 	<configuration>
+ 		<autoloads>
+ 			<autoload name="AgaviSampleAppLanguageRoutingCallback">%core.lib_dir%/routing/AgaviSampleAppLanguageRoutingCallback.class.php</autoload>
++			<autoload name="TestCallback">%core.lib_dir%/routing/AgaviSampleAppLanguageRoutingCallback.class.php</autoload>
+ 			
+ 			<autoload name="AgaviSampleAppUser">%core.lib_dir%/user/AgaviSampleAppUser.class.php</autoload>
+ 		</autoloads>
+Index: /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/lib/routing/AgaviSampleAppLanguageRoutingCallback.class.php
+===================================================================
+--- /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/lib/routing/AgaviSampleAppLanguageRoutingCallback.class.php	(revision 2304)
++++ /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/lib/routing/AgaviSampleAppLanguageRoutingCallback.class.php	(working copy)
+@@ -1,5 +1,13 @@
+ <?php
+ 
++class TestCallback extends AgaviRoutingCallback {
++	public function onGenerate(array $defaultParameters, array &$userParameters, array &$userOptions) {
++		unset($userParameters['zomg']);
++		
++		return parent::onGenerate($defaultParameters, $userParameters, $userOptions);
++	}
++}
++
+ class AgaviSampleAppLanguageRoutingCallback extends AgaviRoutingCallback
+ {
+ 	protected $availableLocales = array();
+Index: /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/modules/Default/templates/MenuSuccess.php
+===================================================================
+--- /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/modules/Default/templates/MenuSuccess.php	(revision 2304)
++++ /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/modules/Default/templates/MenuSuccess.php	(working copy)
+@@ -4,7 +4,7 @@
+ <?php if(!$us->isAuthenticated()): ?>
+ 	<li><a href="<?php echo $ro->gen('login'); ?>"><?php echo $tm->_('Login', 'default.menu'); ?></a></li>
+ <?php endif; ?>
+-	<li><a href="<?php echo $ro->gen('secure'); ?>"><?php echo $tm->_('A Secure Action', 'default.menu'); ?></a></li>
++	<li><a href="<?php echo $ro->gen('secure', array('zomg' => 'woot')); ?>"><?php echo $tm->_('A Secure Action', 'default.menu'); ?></a></li>
+ 	<li><a href="<?php echo $ro->gen('secure2'); ?>"><?php echo $tm->_('Another Secure Action', 'default.menu'); ?></a></li>
+ 	<li><a href="<?php echo $ro->gen('asdjashdasd'); ?>" onclick="return alert('<?php echo $tm->_('You will now be redirected to an invalid URL. If no rewrite rules are in place, this means you will see a standard 404 page of your web server, unless you configured an ErrorDocument 404 or some similar setting. If rewrite rules are in place (i.e. no index.php part in the URL), you will be shown the Agavi 404 document. This is correct and expected behavior.', 'default.menu'); ?>');"><?php echo $tm->_('Call invalid URL', 'default.menu'); ?></a></li>
+ 	<li><a href="<?php echo $ro->gen('disabled'); ?>"><?php echo $tm->_('Try Disabled Module', 'default.menu'); ?></a></li>

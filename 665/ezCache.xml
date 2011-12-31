@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<configurations>
+	<configuration>
+		<!-- default location is /app/cache/ezCache -->
+		<location>%core.cache_dir%/ezCache</location>
+		<!-- default storage class to use -->
+		<storage_class>ezcCacheStorageFilePlain</storage_class>
+		<options>
+			<!-- default time to live -->
+			<ttl>86400</ttl>
+		</options>
+	</configuration>
+</configurations>

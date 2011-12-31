@@ -1,0 +1,45 @@
+Index: agavi/filter/AgaviExecutionFilter.class.php
+===================================================================
+--- agavi/filter/AgaviExecutionFilter.class.php	(revision 2843)
++++ agavi/filter/AgaviExecutionFilter.class.php	(working copy)
+@@ -187,12 +187,30 @@
+ 	public function writeCache(array $groups, $data, $lifetime = null)
+ 	{
+ 		// lifetime is not used in this implementation!
++		$perms = fileperms(AgaviConfig::get('core.cache_dir')) ^ 0x4000;
++
++		$rootDirectory = AgaviConfig::get('core.cache_dir') . DIRECTORY_SEPARATOR  . self::CACHE_SUBDIR . DIRECTORY_SEPARATOR;
++
++		AgaviToolkit::mkdir($rootDirectory, $perms);
+ 		
++		$directories = array();
++
++		$fileName = array_pop($groups);
++
+ 		foreach($groups as &$group) {
+-			$group = base64_encode($group);
++			$directories[] = base64_encode($group);
++			AgaviToolkit::mkdir($rootDirectory . implode(DIRECTORY_SEPARATOR, $directories), $perms);
+ 		}
+-		@mkdir(AgaviConfig::get('core.cache_dir') . DIRECTORY_SEPARATOR  . self::CACHE_SUBDIR . DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR , array_slice($groups, 0, -1)), 0777, true);
+-		return file_put_contents(AgaviConfig::get('core.cache_dir') . DIRECTORY_SEPARATOR . self::CACHE_SUBDIR . DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR, $groups) . '.cefcache', serialize($data), LOCK_EX);
++
++		$fileName = $rootDirectory . implode(DIRECTORY_SEPARATOR, $directories) . DIRECTORY_SEPARATOR . base64_encode($fileName) . '.cefcache';
++
++		$success = file_put_contents($fileName, serialize($data), LOCK_EX);
++
++		if ($success) {
++			// It worked, let's fix also the permissions!
++			chmod($fileName, $perms);
++		}
++		return $success;
+ 	}
+ 
+ 	/**
+@@ -752,4 +770,4 @@
+ 	
+ }
+ 
+-?>
+\ No newline at end of file
++?>

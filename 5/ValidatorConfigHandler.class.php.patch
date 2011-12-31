@@ -1,0 +1,177 @@
+--- mojavi.orig/config/ValidatorConfigHandler.class.php	2005-02-15 15:26:32.000000000 -0600
++++ mojavi/config/ValidatorConfigHandler.class.php	2005-02-15 15:26:18.911903264 -0600
+@@ -154,99 +154,104 @@
+         $data[] = "\t\$validators = array();";
+ 
+         // determine which validators we need to create for this request method
+-        foreach ($methods[$method] as $name)
+-        {
+-
+-            if (preg_match('/^([a-z0-9\-_]+)\{([a-z0-9\s\-_]+)\}$/i', $name,
+-                           $match))
++	if(isset($methods[$method]))
++	{
++	
++            foreach ($methods[$method] as $name)
+             {
+ 
+-                // this file/parameter has a parent
+-                $subname = $match[2];
+-                $parent  = $match[1];
++                if (preg_match('/^([a-z0-9\-_]+)\{([a-z0-9\s\-_]+)\}$/i', $name,
++                               $match))
++                {
+ 
+-                $valList =& $names[$parent][$subname]['validators'];
++                    // this file/parameter has a parent
++                    $subname = $match[2];
++                    $parent  = $match[1];
+ 
+-            } else
+-            {
++                    $valList =& $names[$parent][$subname]['validators'];
+ 
+-                // no parent
+-                $valList =& $names[$name]['validators'];
++                } else
++                {
+ 
+-            }
++                    // no parent
++                    $valList =& $names[$name]['validators'];
+ 
+-            if ($valList == null)
+-            {
++                }
+ 
+-                // no validator list for this file/parameter
+-                continue;
++                if ($valList == null)
++                {
+ 
+-            }
++                    // no validator list for this file/parameter
++                    continue;
+ 
+-            foreach ($valList as &$valName)
+-            {
++                }
+ 
+-                if (isset($validators[$valName]) &&
+-                    !isset($validators[$valName][$method]))
++                foreach ($valList as &$valName)
+                 {
+ 
+-                    // retrieve this validator's info
+-                    $validator =& $validators[$valName];
++                    if (isset($validators[$valName]) &&
++                        !isset($validators[$valName][$method]))
++                    {
++
++                        // retrieve this validator's info
++                        $validator =& $validators[$valName];
+ 
+-                    $tmp     = "\t\$validators['%s'] = new %s();\n";
+-                    $tmp    .= "\t\$validators['%s']->initialize(%s, %s);";
+-                    $data[]  = sprintf($tmp, $valName, $validator['class'],
+-                                       $valName, '$context',
+-                                       $validator['parameters']);
++                        $tmp     = "\t\$validators['%s'] = new %s();\n";
++                        $tmp    .= "\t\$validators['%s']->initialize(%s, %s);";
++                        $data[]  = sprintf($tmp, $valName, $validator['class'],
++                                           $valName, '$context',
++                                           $validator['parameters']);
+ 
+-                    // mark this validator as created for this request method
+-                    $validators[$valName][$method] = true;
++                        // mark this validator as created for this request method
++                        $validators[$valName][$method] = true;
++
++                    }
+ 
+                 }
+ 
+             }
+ 
+-        }
++            foreach ($methods[$method] as $name)
++            {
+ 
+-        foreach ($methods[$method] as $name)
+-        {
++                if (preg_match('/^([a-z0-9\-_]+)\{([a-z0-9\s\-_]+)\}$/i', $name,
++                               $match))
++                {
+ 
+-            if (preg_match('/^([a-z0-9\-_]+)\{([a-z0-9\s\-_]+)\}$/i', $name,
+-                           $match))
+-            {
++                    // this file/parameter has a parent
++                    $subname = $match[2];
++                    $parent  = $match[1];
++                    $name    = $match[2];
+ 
+-                // this file/parameter has a parent
+-                $subname = $match[2];
+-                $parent  = $match[1];
+-                $name    = $match[2];
++                    $attributes =& $names[$parent][$subname];
+ 
+-                $attributes =& $names[$parent][$subname];
++                } else
++                {
+ 
+-            } else
+-            {
++                    // no parent
++                    $attributes =& $names[$name];
+ 
+-                // no parent
+-                $attributes =& $names[$name];
++                }
+ 
+-            }
++                // register file/parameter
++                $tmp    = "\t\$validatorManager->registerName('%s', %s, %s, %s, " .
++                          "%s, %s);";
++                $data[] = sprintf($tmp, $name, $attributes['required'],
++                                  $attributes['required_msg'],
++                                  $attributes['parent'], $attributes['group'],
++                                  $attributes['file']);
+ 
+-            // register file/parameter
+-            $tmp    = "\t\$validatorManager->registerName('%s', %s, %s, %s, " .
+-                      "%s, %s);";
+-            $data[] = sprintf($tmp, $name, $attributes['required'],
+-                              $attributes['required_msg'],
+-                              $attributes['parent'], $attributes['group'],
+-                              $attributes['file']);
++                // register validators for this file/parameter
++                foreach ($attributes['validators'] as &$validator)
++                {
+ 
+-            // register validators for this file/parameter
+-            foreach ($attributes['validators'] as &$validator)
+-            {
++                    $tmp    = "\t\$validatorManager->registerValidator('%s', %s, " .
++                              "%s);";
++                    $data[] = sprintf($tmp, $name,
++                                      "\$validators['$validator']",
++                                      $attributes['parent']);
+ 
+-                $tmp    = "\t\$validatorManager->registerValidator('%s', %s, " .
+-                          "%s);";
+-                $data[] = sprintf($tmp, $name,
+-                                  "\$validators['$validator']",
+-                                  $attributes['parent']);
++                }
+ 
+             }
+ 
+@@ -626,4 +631,4 @@
+ 
+ }
+ 
+-?>
+\ No newline at end of file
++?>

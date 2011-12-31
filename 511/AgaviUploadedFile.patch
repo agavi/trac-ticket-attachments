@@ -1,0 +1,15 @@
+Index: AgaviUploadedFile.class.php
+===================================================================
+--- AgaviUploadedFile.class.php	(revision 1893)
++++ AgaviUploadedFile.class.php	(working copy)
+@@ -74,8 +74,8 @@
+ 	 */
+ 	public function __destruct()
+ 	{
+-		if(!$this->moved && !$this->is_uploaded_file) {
+-			@unlink($this->tmp_name);
++		if(!$this['moved'] && !$this['is_uploaded_file']) {
++			@unlink($this['tmp_name']);
+ 		}
+ 	}
+ 	

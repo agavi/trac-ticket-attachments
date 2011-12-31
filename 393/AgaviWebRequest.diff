@@ -1,0 +1,27 @@
+Index: request/AgaviWebRequest.class.php
+===================================================================
+--- request/AgaviWebRequest.class.php	(revision 1569)
++++ request/AgaviWebRequest.class.php	(working copy)
+@@ -270,16 +270,17 @@
+ 			// PUT. We now gotta set a flag for that and populate $_FILES manually
+ 			$this->isHttpPutFile = true;
+ 
+-			$putFile = tmpfile();
++			$putFile = tempnam(AgaviConfig::get('core.cache_dir'), "PUTUpload_");
++			stream_copy_to_stream(fopen("php://input", "rb"), fopen($putFile, "w+"));
+ 
+-			stream_copy_to_stream(fopen("php://input", "rb"), $putFile);
+-
++			$file = fopen($putFile, 'r');
+ 			// for temp file name and size
+ 			$putFileInfo = array(
+-				'stat' => fstat($putFile),
+-				'meta_data' => stream_get_meta_data($putFile)
++				'stat' => fstat($file),
++				'meta_data' => stream_get_meta_data($file)
+ 			);
+ 
++			fclose($file);
+ 			$putFileName = $this->getParameter('PUT_file_name', 'put_file');
+ 
+ 			$_FILES = array(

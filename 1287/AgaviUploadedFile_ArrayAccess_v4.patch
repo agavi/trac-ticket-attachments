@@ -1,0 +1,273 @@
+Index: src/request/AgaviUploadedFile.class.php
+===================================================================
+--- src/request/AgaviUploadedFile.class.php	(revision 4550)
++++ src/request/AgaviUploadedFile.class.php	(working copy)
+@@ -21,6 +21,7 @@
+  * @subpackage request
+  *
+  * @author     David Zülke <dz@bitxtender.com>
++ * @author     Niklas Närhinen <niklas@narhinen.net>
+  * @copyright  Authors
+  * @copyright  The Agavi Project
+  *
+@@ -28,7 +29,7 @@
+  *
+  * @version    $Id$
+  */
+-class AgaviUploadedFile extends ArrayObject
++class AgaviUploadedFile implements ArrayAccess
+ {
+ 	/**
+ 	 * @var        array An array to map get* method name fragments to indices.
+@@ -37,22 +38,51 @@
+ 		'Name' => 'name',
+ 		'Type' => 'type',
+ 		'Size' => 'size',
+-		'TmpName' => 'tmp_name',
++		'TmpName' => 'tmpName',
+ 		'Error' => 'error',
+-		'IsUploadedFile' => 'is_uploaded_file',
++		'IsUploadedFile' => 'isUploadedFile',
+ 	);
+ 	
+ 	/**
++	 * @var        string The name of the uploaded file
++	 */
++	protected $name;
++	
++	/**
++	 * @var        string The mime type of the uploaded file
++	 */
++	protected $type;
++	
++	/**
++	 * @var        int The size of the uploaded file in bytes
++	 */
++	protected $size;
++	
++	/**
++	 * @var        string The temporary filename of the uploaded file
++	 */
++	protected $tmpName;
++	
++	/**
++	 * @var        int The error code associated with the file upload
++	 */
++	protected $error;
++	
++	/**
++	 * @var        bool Indicates whether the file is a uploaded file
++	 */
++	protected $isUploadedFile;
++	
++	/**
+ 	 * Constructor.
+ 	 *
+-	 * @param      $flags int Flags, overridden to be ArrayObject::ARRAY_AS_PROPS.
++	 * @param      $array The array containing uploaded file data
+ 	 *
+-	 * @see        ArrayObject::__construct()
+-	 *
+ 	 * @author     David Zülke <dz@bitxtender.com>
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
+ 	 * @since      0.11.0
+ 	 */
+-	public function __construct($array = array(), $flags = ArrayObject::ARRAY_AS_PROPS, $iteratorClass = 'ArrayIterator')
++	public function __construct($array = array())
+ 	{
+ 		$defaults = array(
+ 			'name' => null,
+@@ -63,42 +93,181 @@
+ 			'is_uploaded_file' => true,
+ 			'moved' => false,
+ 		);
+-		parent::__construct(array_merge($defaults, $array), $flags, $iteratorClass);
++		$data = array_merge($defaults, $array);
++		$this->name = $data['name'];
++		$this->type = $data['type'];
++		$this->size = $data['size'];
++		$this->tmpName = $data['tmp_name'];
++		$this->error = $data['error'];
++		$this->isUploadedFile = $data['is_uploaded_file'];
+ 	}
+ 	
+ 	/**
+ 	 * Destructor. Removes the tempfile.
+ 	 *
+ 	 * @author     David Zülke <dz@bitxtender.com>
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
+ 	 * @since      0.11.0
+ 	 */
+ 	public function __destruct()
+ 	{
+ 		// must use array syntax here, ArrayObject property access does not work in destructors
+-		if(!$this['moved'] && !$this['is_uploaded_file']) {
+-			@unlink($this['tmp_name']);
++		if(!$this->moved && !$this->is_uploaded_file) {
++			@unlink($this->tmp_name);
+ 		}
+ 	}
+ 	
+ 	/**
+-	 * Overload to handle getName() etc calls.
++	 * Checks whether or not this key exists in the container
++	 * 
++	 * @see        ArrayAccess::offsetExists() 
+ 	 *
+-	 * @param      string The name of the method.
+-	 * @param      array  The method arguments.
++	 * @return     bool True in case key exists
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
++	 */
++	public function offsetExists($offset)
++	{
++		return isset($this->$offset) || isset($this->{self::$indexMap[$offset]});
++	}
++	
++	/**
++	 * Retrieve the value of the container with the given key
++	 * 
++	 * @see        ArrayAccess::offsetGet()
+ 	 *
+-	 * @return     string A value.
++	 * @return     mixed The value off the container with the key
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
++	 */
++	public function offsetGet($offset)
++	{
++		if(isset(self::$indexMap[$offset])) {
++			$offset = self::$indexMap[$offset];
++		}
++		return $this->$offset;
++	}
++	
++	/**
++	 * Add or replace a value in the container with the given key
+ 	 *
+-	 * @author     David Zülke <dz@bitxtender.com>
+-	 * @since      0.11.0
++	 * @see        ArrayAccess::offsetSet()
++	 *
++	 * @return     void
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
+ 	 */
+-	public function __call($name, array $arguments)
++	public function offsetSet($offset, $value)
+ 	{
+-		if(substr($name, 0, 3) == 'get') {
+-			return $this[self::$indexMap[substr($name, 3)]];
++		if(isset(self::$indexMap[$offset])) {
++			$offset = self::$indexMap[$offset];
+ 		}
++		$this->$offset = $value;
+ 	}
+ 	
+ 	/**
++	 * Unset a key-value-pair in the container
++	 * 
++	 * @see        ArrayAccess::offsetUnset()
++	 *
++	 * @return     void
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
++	 */
++	public function offsetUnset($offset)
++	{
++		if(isset(self::$indexMap[$offset])) {
++			$offset = self::$indexMap[$offset];
++		}
++		unset($this->$offset);
++	}
++	
++	/**
++	 * Retrieve the name of the uploaded file
++	 *
++	 * @return     string The name of the uploaded file
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
++	 */
++	public function getName()
++	{
++		return $this->name;
++	}
++	
++	/**
++	 * Retrieve the mime type of the uploaded file
++	 *
++	 * @return     string The mime type of the uploaded file
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
++	 */
++	public function getType()
++	{
++		return $this->type;
++	}
++	
++	/**
++	 * Retrieve the size of the uploaded file in bytes
++	 *
++	 * @return     int The size of the uploaded file in bytes
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
++	 */
++	public function getSize()
++	{
++		return $this->size;
++	}
++	
++	/**
++	 * Retrieve the temporary filename of the uploaded file
++	 *
++	 * @return     string The temporary filename of the uploaded file
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
++	 */
++	public function getTmpName()
++	{
++		return $this->tmp_name;
++	}
++	
++	/**
++	 * Retrieve the error code associated with this file upload
++	 *
++	 * @return     int The error code for this file upload
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
++	 */
++	public function getError()
++	{
++		return $this->error;
++	}
++	
++	/**
++	 * Convenience method to be BC
++	 *
++	 * @return     bool True in case file is an uploaded file
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
++	 * @deprecated Use AgaviUploadedFile::isUploadedFile() instead
++	 */
++	public function getIsUploadedFile()
++	{
++		return $this->is_uploaded_file;
++	}
++	
++	/**
++	 * Check whether or not this is an uploaded file 
++	 *
++	 * @return     bool True in case file is an uploaded file
++	 * @author     Niklas Närhinen <niklas@narhinen.net>
++	 * @since      1.1
++	 */
++	public function isUploadedFile()
++	{
++		return $this->is_uploaded_file;
++	}
++	
++	/**
+ 	 * Check whether or not this file has an error.
+ 	 *
+ 	 * This only returns PHP's own information, not validator's.

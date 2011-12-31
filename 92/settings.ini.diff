@@ -1,0 +1,13 @@
+Index: webapp/config/settings.ini
+===================================================================
+--- webapp/config/settings.ini	(revision 414)
++++ webapp/config/settings.ini	(working copy)
+@@ -188,5 +188,6 @@
+ ; ----- SMARTY SETUP -----
+ 
+ ;[.smarty]
+-;    SMARTY_DIR = ""
+-;    SMARTY_CACHE_DIR = ""
++;	SMARTY_DIR = ""
++;	SMARTY_CACHE_DIR = ""
++;	SMARTY_COMPILE_DIR = ""

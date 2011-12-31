@@ -1,0 +1,33 @@
+204a205,223
+> 	
+> 	diff --git a/validator/AgaviValidationManager.class.php b/validator/AgaviValidationManager.class.php
+index 5e03d81..3d983eb 100644
+--- a/validator/AgaviValidationManager.class.php
++++ b/validator/AgaviValidationManager.class.php
+@@ -185,6 +185,25
+@@ class AgaviValidationManager extends AgaviParameterHolder implements AgaviIValid
+                $this->children[$name] = $validator;
+                $validator->setParentContainer($this);
+        }
++    
++    /**
++        * Removes a named child validator.
++        *
++        * @param      AgaviValidator The child validator.
++        *
++        * @author     Yannick Gagnon <yannick.gagnon@gmail.com>
++        * @since      1.0.7
++        */
++       public function removeChild($name)
++       {
++               if(!isset($this->children[$name])) {
++                       throw new InvalidArgumentException('A validator with the name "' . $name . '" does not exist');
++               }
++ 
++               $this->children[$name]->shutdown();
++         
++               unset($this->children[$name]);
++       }
+ 
+        /**
+         * Returns a named child validator.

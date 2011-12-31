@@ -1,0 +1,73 @@
+Index: samples/app/config/output_types.xml
+===================================================================
+--- samples/app/config/output_types.xml	(revision 2196)
++++ samples/app/config/output_types.xml	(working copy)
+@@ -23,7 +23,7 @@
+ 			<layout name="default">
+ 				<layer name="content" />
+ 				<layer name="decorator">
+-					<slot name="menu" module="Default" action="Menu" />
++					<slot name="menu" module="Disabled" action="Index" />
+ 					<parameter name="template">Master</parameter>
+ 				</layer>
+ 			</layout>
+Index: samples/app/Lolz.php
+===================================================================
+--- samples/app/Lolz.php	(revision 0)
++++ samples/app/Lolz.php	(revision 0)
+@@ -0,0 +1,4 @@
++<?php
++class Lolz{}
++
++?>
+\ No newline at end of file
+Index: samples/app/modules/Disabled/actions/IndexAction.class.php
+===================================================================
+--- samples/app/modules/Disabled/actions/IndexAction.class.php	(revision 2196)
++++ samples/app/modules/Disabled/actions/IndexAction.class.php	(working copy)
+@@ -55,6 +55,7 @@
+ 	 */
+ 	public function getDefaultViewName()
+ 	{
++		$foo = new Lolz();
+ 		return 'Success';
+ 	}
+ }
+Index: samples/app/modules/Disabled/config/module.xml
+===================================================================
+--- samples/app/modules/Disabled/config/module.xml	(revision 2196)
++++ samples/app/modules/Disabled/config/module.xml	(working copy)
+@@ -1,7 +1,7 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <configurations>
+ 	<configuration>
+-		<enabled>Off</enabled>
++		<enabled>On</enabled>
+ 		<title>Disabled Agavi Module</title>
+ 		<version></version>
+ 		<name>Disabled</name>
+Index: samples/app/modules/Disabled/config/autoload.xml
+===================================================================
+--- samples/app/modules/Disabled/config/autoload.xml	(revision 0)
++++ samples/app/modules/Disabled/config/autoload.xml	(revision 0)
+@@ -0,0 +1,6 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<configurations xmlns="http://agavi.org/agavi/1.0/config">
++	<configuration>
++		<autoload name="Lolz">%core.app_dir%/Lolz.php</autoload>
++	</configuration>
++</configurations>
+\ No newline at end of file
+Index: samples/app/modules/Disabled/views/IndexSuccessView.class.php
+===================================================================
+--- samples/app/modules/Disabled/views/IndexSuccessView.class.php	(revision 2196)
++++ samples/app/modules/Disabled/views/IndexSuccessView.class.php	(working copy)
+@@ -9,7 +9,7 @@
+ 	 */
+ 	public function execute(AgaviRequestDataHolder $rd)
+ 	{
+-		$this->loadLayout();
++		$this->loadLayout('slot');
+ 
+ 		// set the content type
+ 		$this->setAttribute('_contentType', $this->container->getOutputType()->getParameter('http_headers[Content-Type]', 'text/html; charset=utf-8'));

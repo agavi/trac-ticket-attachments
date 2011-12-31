@@ -1,0 +1,28 @@
+Index: validator/AgaviDependencyManager.class.php
+===================================================================
+--- validator/AgaviDependencyManager.class.php	(revision 4326)
++++ validator/AgaviDependencyManager.class.php	(working copy)
+@@ -60,18 +60,21 @@
+ 	public function checkDependencies(array $tokens, AgaviVirtualArrayPath $base)
+ 	{
+ 		$root = new AgaviVirtualArrayPath('');
++		$currentParts = $base->getParts();
+ 		foreach($tokens as $token) {
++			if(count($currentParts) > 0 && strpos($token, '%') !== false) {
++				// the depends attribute contains sprintf syntax
++				$token = vsprintf($token, $currentParts);
++			}
+ 			$path = $root;
+ 			if(substr($token, 0, 1) == '[') {
+ 				// the dependency we need to check is relative
+ 				$path = $base;
+ 			}
+-
+ 			if(!$path->getValueByChildPath($token, $this->depData)) {
+ 				return false;
+ 			}
+ 		}
+-		
+ 		return true;
+ 	}
+ 

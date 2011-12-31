@@ -1,0 +1,307 @@
+Index: src/config/defaults/autoload.xml
+===================================================================
+--- src/config/defaults/autoload.xml	(revision 3989)
++++ src/config/defaults/autoload.xml	(working copy)
+@@ -152,6 +152,8 @@
+ 			<autoload name="AgaviIReusableRenderer">%core.agavi_dir%/renderer/AgaviIReusableRenderer.interface.php</autoload>
+ 			<autoload name="AgaviPhpRenderer">%core.agavi_dir%/renderer/AgaviPhpRenderer.class.php</autoload>
+ 			<autoload name="AgaviPhptalRenderer">%core.agavi_dir%/renderer/AgaviPhptalRenderer.class.php</autoload>
++			<autoload name="AgaviPhptalFilterChain">%core.agavi_dir%/renderer/phptal/AgaviPhptalFilterChain.class.php</autoload>
++			<autoload name="AgaviPhptalTales">%core.agavi_dir%/renderer/phptal/AgaviPhptalTales.class.php</autoload>
+ 			<autoload name="AgaviRenderer">%core.agavi_dir%/renderer/AgaviRenderer.class.php</autoload>
+ 			<autoload name="AgaviSmartyRenderer">%core.agavi_dir%/renderer/AgaviSmartyRenderer.class.php</autoload>
+ 			
+Index: src/renderer/AgaviPhptalRenderer.class.php
+===================================================================
+--- src/renderer/AgaviPhptalRenderer.class.php	(revision 3989)
++++ src/renderer/AgaviPhptalRenderer.class.php	(working copy)
+@@ -21,6 +21,7 @@
+  *
+  * @author     David Zülke <dz@bitxtender.com>
+  * @author     Benjamin Muskalla <bm@bmuskalla.de>
++ * @author     TANAKA Koichi <tanaka@ensites.net>
+  * @copyright  Authors
+  * @copyright  The Agavi Project
+  *
+@@ -53,6 +54,8 @@
+ 	 */
+ 	protected $phptal = null;
+ 
++	static protected $talesRegistered = false;
++
+ 	/**
+ 	 * Pre-serialization callback.
+ 	 *
+@@ -75,6 +78,7 @@
+ 	 *
+ 	 * @author     David Zülke <dz@bitxtender.com>
+ 	 * @author     Benjamin Muskalla <bm@muskalla.de>
++	 * @author     TANAKA Koichi <tanaka@ensites.net>
+ 	 * @since      0.11.0
+ 	 */
+ 	protected function getEngine()
+@@ -84,12 +88,39 @@
+ 				define('PHPTAL_PHP_CODE_DESTINATION', AgaviConfig::get('core.cache_dir') . DIRECTORY_SEPARATOR . AgaviPhptalRenderer::COMPILE_DIR . DIRECTORY_SEPARATOR . AgaviPhptalRenderer::COMPILE_SUBDIR . DIRECTORY_SEPARATOR);
+ 				AgaviToolkit::mkdir(PHPTAL_PHP_CODE_DESTINATION, fileperms(AgaviConfig::get('core.cache_dir')), true);
+ 			}
+-			
++
+ 			if(!class_exists('PHPTAL')) {
+ 				require('PHPTAL.php');
+ 			}
+-			
++
++			AgaviPhptalTales::registerTales();
+ 			$this->phptal = new PHPTAL();
++
++			// setup filter chain
++			$prefilters = (array)$this->getParameter('prefilter', array());
++			$postfilters = (array)$this->getParameter('postfilter', array());
++
++
++			if(!interface_exists('PHPTAL_Filter') && (!empty($postfilters) || !empty($prefilters))) {
++				require('PHPTAL/Filter.php');
++			}
++
++			if(!empty($prefilters)) {
++				$prefilter = new AgaviPhptalFilterChain();
++				foreach($prefilters As $filter) {
++					$prefilter->add(new $filter());
++				}
++				$this->phptal->setpreFilter($prefilter);
++			}
++
++			if(!empty($postfilters)) {
++				$postfilter = new AgaviPhptalFilterChain();
++				foreach($postfilters As $filter) {
++					$postfilter->add(new $filter());
++				}
++				$this->phptal->setPostFilter($postfilter);
++			}
++
+ 		}
+ 		return $this->phptal;
+ 	}
+
+Index: src/renderer/phptal/AgaviPhptalFilterChain.class.php
+===================================================================
+--- src/renderer/phptal/AgaviPhptalFilterChain.class.php	(revision 0)
++++ src/renderer/phptal/AgaviPhptalFilterChain.class.php	(revision 0)
+@@ -0,0 +1,32 @@
++<?php
++// +---------------------------------------------------------------------------+
++// | This file is part of the Agavi package.                                   |
++// | Copyright (c) 2005-2009 the Agavi Project.                                |
++// |                                                                           |
++// | For the full copyright and license information, please view the LICENSE   |
++// | file that was distributed with this source code. You can also view the    |
++// | LICENSE file online at http://www.agavi.org/LICENSE.txt                   |
++// |   vi: set noexpandtab:                                                    |
++// |   Local Variables:                                                        |
++// |   indent-tabs-mode: t                                                     |
++// |   End:                                                                    |
++// +---------------------------------------------------------------------------+
++
++class AgaviPhptalFilterChain implements PHPTAL_Filter {
++
++	private $filters = array();
++
++	public function add(PHPTAL_Filter $filter){
++		$this->filters[] = $filter;
++	}
++
++	public function filter($source){
++
++		foreach ($this->filters as $filter){
++			$source = $filter->filter($source);
++		}
++
++		return $source;
++	}
++}
++?>
+
+Index: src/renderer/phptal/AgaviPhptalTales.class.php
+===================================================================
+--- src/renderer/phptal/AgaviPhptalTales.class.php	(revision 0)
++++ src/renderer/phptal/AgaviPhptalTales.class.php	(revision 0)
+@@ -0,0 +1,76 @@
++<?php
++
++// +---------------------------------------------------------------------------+
++// | This file is part of the Agavi package.                                   |
++// | Copyright (c) 2005-2009 the Agavi Project.                                |
++// |                                                                           |
++// | For the full copyright and license information, please view the LICENSE   |
++// | file that was distributed with this source code. You can also view the    |
++// | LICENSE file online at http://www.agavi.org/LICENSE.txt                   |
++// |   vi: set noexpandtab:                                                    |
++// |   Local Variables:                                                        |
++// |   indent-tabs-mode: t                                                     |
++// |   End:                                                                    |
++// +---------------------------------------------------------------------------+
++
++class AgaviPhptalTales implements PHPTAL_Tales
++{
++	/**
++	 * This is a phptal modifier, which will return routing call.
++	 *
++	 * route.name+
++	 *
++	 * @param      string $src The expression string
++	 * @param      boolean $nothrow
++	 *				A boolean indicating if exceptions may be throw by phptal_path if
++	 *				the path does not exists.
++	 *
++	 * @return     string
++	 *
++	 * @author     TANAKA Koichi <tanaka@ensites.net>
++	 *
++	 * @since
++	 */
++	static public function route( $src, $nothrow = false)
++	{
++		if(preg_match('#^(/)?(?<route>[\w\d_.+-]+)(\[(?<attrs>[^\]]+)\])?(\[(?<opts>[^\]]+)\])?$#sm', $src, $matches)) {
++			
++			return sprintf('$ctx->ro->gen("%s", %s, %s)',
++				$matches['route'],
++				array_key_exists('attrs', $matches) ?
++					self::arraytal($matches['attrs'], $nothrow) : 'array()',
++				array_key_exists('opts', $matches) ?
++					self::arraytal($matches['opts'], $nothrow) : 'array()');
++				
++		} elseif($nothrow) {
++			$err = 'syntax error: ' . $src;
++			throw new PHPTAL_ParserException($err);
++		}
++	}
++
++	static public function arraytal($src, $nothrow = false)
++	{
++		$arr = array();
++		foreach(explode(',', $src) as $elem) {
++			list($key, $value) = explode('=>', $elem);
++			$arr[] = sprintf("%s=>%s", phptal_tales('string:' . trim($key), $nothrow), phptal_tales($value, $nothrow));
++		}
++		return 'array(' . implode(',', $arr) . ')';
++	}
++	
++	static public function registerTales()
++	{
++		static $registered = false;
++
++		if($registered) {
++			return;
++		}
++
++		$registry = PHPTAL_TalesRegistry::getInstance();
++
++		$registry->registerPrefix('agavi-route', array(__CLASS__, 'route'));
++
++		$registered = true;
++	}
++}
++?>
+
+Index: test/config/suites.xml
+===================================================================
+--- test/config/suites.xml	(revision 3989)
++++ test/config/suites.xml	(working copy)
+@@ -25,6 +25,11 @@
+ 					<testfile>unit/routing/Ticket1051Test.php</testfile>
+ 				</testfiles>
+ 			</suite>
++			<suite name="Renderer">
++				<testfiles>
++					<testfile>unit/renderer/AgaviPhptalRendererTest.php</testfile>
++				</testfiles>
++			</suite>
+ 			<suite name="Request">
+ 				<testfiles>
+ 					<testfile>unit/request/AgaviWebRequestDataHolderParameterTest.php</testfile>
+Index: test/tests/unit/renderer/AgaviPhptalRendererTest.php
+===================================================================
+--- test/tests/unit/renderer/AgaviPhptalRendererTest.php	(revision 0)
++++ test/tests/unit/renderer/AgaviPhptalRendererTest.php	(revision 0)
+@@ -0,0 +1,81 @@
++<?php
++include_once('PHPTAL/Filter.php');
++class AgaviPhptalRendererTest extends AgaviUnitTestCase
++{
++	public function testFilter()
++	{
++		$context = $this->getContext();
++		$layer = new AgaviDataTemplateLayer();
++		$layer->initialize($context);
++		$layer->setParameter('type', AgaviDataTemplateLayer::TYPE_TEMPFILE);
++		$layer->setParameter('data', '<p>foo</p>');
++		$renderer = new AgaviPhptalRenderer();
++		$parameters = array('postfilter'=>array('AgaviPhptalRenderereTest_postfilter'), 'prefilter'=>array('AgaviPhptalRenderereTest_prefilter'));
++		$renderer->initialize($context, $parameters);
++
++
++		try {
++			$output =  $renderer->render($layer);
++		} catch (Exception $e) {
++			$this->fail($e->getMessage() . $e->getTraceAsString());
++		}
++
++		$this->assertEquals(1, AgaviPhptalRenderereTest_postfilter::$called);
++		$this->assertEquals(1, AgaviPhptalRenderereTest_prefilter::$called);
++
++		$this->assertEquals('<p>foo</p>', $output);
++	}
++
++	/**
++	 *
++	 * @dataProvider routes
++	 */
++	public function testRouteTal($route, $attributes, $expected)
++	{
++		$context = $this->getContext();
++		$layer = new AgaviDataTemplateLayer();
++		$layer->initialize($context);
++		$layer->setParameter('type', AgaviDataTemplateLayer::TYPE_TEMPFILE);
++		$layer->setParameter('data', '<a href="${structure agavi-route:' . $route . '}">foo</a>');
++		$renderer = new AgaviPhptalRenderer();
++		$renderer->initialize($context, array('assigns'=>array('Routing'=>'ro')));
++
++		try {
++			$output =  $renderer->render($layer, $attributes);
++		} catch (Exception $e) {
++			$this->fail($e->getMessage() . $e->getTraceAsString());
++		}
++
++		$this->assertEquals($expected, $output);
++	}
++
++	public function routes()
++	{
++		return array(
++			array('foo.bar[baz=>template/foo/bar, page=>string:3]', array('foo'=>array('bar'=>1)), '<a href="foo.bar?baz=1&amp;page=3">foo</a>'),
++		);
++	}
++}
++
++class AgaviPhptalRenderereTest_prefilter implements PHPTAL_Filter
++{
++	static public $called = 0;
++
++	public function filter($source)
++	{
++		self::$called++;
++		return $source;
++	}
++}
++
++class AgaviPhptalRenderereTest_postfilter implements PHPTAL_Filter
++{
++	static public $called = 0;
++
++	public function filter($source)
++	{
++		self::$called++;
++		return $source;
++	}
++}
++?>

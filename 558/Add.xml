@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurations>
+	<configuration>
+		<validators>
+		
+			<validator class="string" name="role" translation_domain="default.errors.UsersAdd">
+				<arguments>
+					<argument>user[roles]</argument>
+				</arguments>
+				<errors>
+					<error>Bitte geben Sie wählen Sie eine Benutzergruppe aus.</error>
+				</errors>
+				<parameters>
+					<parameter name="min">1</parameter>
+				</parameters>
+			</validator>
+
+			<validator class="AgaviPropelValidator" name="username" translation_domain="default.errors.UsersAdd">
+				<arguments>
+					<argument>user[username]</argument>
+				</arguments>
+				<parameters>
+					<parameter name="model">User</parameter>
+					<parameter name="column">username</parameter>
+				</parameters>
+			</validator>
+			
+			<validator class="string" name="password" translation_domain="default.errors.UsersAdd">
+				<arguments>
+					<argument>user[password]</argument>
+				</arguments>
+				<errors>
+					<error>Bitte geben Sie ein Passwort ein.</error>
+				</errors>
+				<parameters>
+					<parameter name="min">1</parameter>
+				</parameters>
+			</validator>
+			
+			<validator class="AgaviPropelValidator" name="realname" translation_domain="default.errors.UsersAdd">
+				<arguments>
+					<argument>user[realname]</argument>
+				</arguments>
+				<parameters>
+					<parameter name="model">User</parameter>
+					<parameter name="column">realname</parameter>
+				</parameters>
+			</validator>
+			
+			<validator class="AgaviPropelValidator" name="email" translation_domain="default.errors.UsersAdd">
+				<arguments>
+					<argument>user[email]</argument>
+				</arguments>
+				<parameters>
+					<parameter name="model">User</parameter>
+					<parameter name="column">email</parameter>
+				</parameters>
+			</validator>
+
+		</validators>
+	</configuration>
+</configurations>

@@ -1,0 +1,365 @@
+Index: src/routing/AgaviConsoleRouting.class.php
+===================================================================
+--- src/routing/AgaviConsoleRouting.class.php	(revision 0)
++++ src/routing/AgaviConsoleRouting.class.php	(revision 0)
+@@ -0,0 +1,78 @@
++<?php
++
++// +---------------------------------------------------------------------------+
++// | This file is part of the Agavi package.                                   |
++// | Copyright (c) 2003-2007 the Agavi Project.                                |
++// |                                                                           |
++// | For the full copyright and license information, please view the LICENSE   |
++// | file that was distributed with this source code. You can also view the    |
++// | LICENSE file online at http://www.agavi.org/LICENSE.txt                   |
++// |   vi: set noexpandtab:                                                    |
++// |   Local Variables:                                                        |
++// |   indent-tabs-mode: t                                                     |
++// |   End:                                                                    |
++// +---------------------------------------------------------------------------+
++
++/**
++ * AgaviConsoleRouting 
++ *
++ * @package    agavi
++ * @subpackage routing
++ *
++ * @author     Dominik del Bondio <ddb@bitxtender.com>
++ * @author     Felix Gilcher <felix@andersground.net>
++ * @copyright  Authors
++ * @copyright  The Agavi Project
++ *
++ * @since      0.11.RC4
++ *
++ * @version    $Id$
++ */
++class AgaviConsoleRouting extends AgaviRouting
++{
++	
++	/**
++	 * Initialize the routing instance.
++	 *
++	 * @param      AgaviContext The Context.
++	 * @param      array        An array of initialization parameters.
++	 *
++	 * @author     David Zülke <dz@bitxtender.com>
++	 * @author     Veikko Mäkinen <veikko@veikkomakinen.com>
++	 * @author     Dominik del Bondio <ddb@bitxtender.com>
++ 	 * @author     Felix Gilcher <felix@andersground.net>
++	 * @since      0.11.RC4
++	 */
++	public function initialize(AgaviContext $context, array $parameters = array())
++	{
++		parent::initialize($context, $parameters);
++		
++		$rq = $this->context->getRequest();
++		$this->input = $rq->getCommand();
++	}
++
++
++	/**
++	 * Generate a formatted Agavi URL.
++	 *
++	 * generating urls is not supported for console
++	 *
++	 * @param      string A route name.
++	 * @param      array  An associative array of parameters.
++	 * @param      mixed  An array of options, or the name of an options preset.
++	 *
++	 * @return     string The generated URL.
++	 *
++	 * @author     Felix Gilcher <felix@andersground.net>
++	 * @since      0.11.RC4
++	 */
++	public function gen($route, array $params = array(), $options = array())
++	{
++		
++	}
++
++
++
++}
++
++?>
+\ No newline at end of file
+
+Property changes on: src/routing/AgaviConsoleRouting.class.php
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Index: src/request/AgaviConsoleRequest.class.php
+===================================================================
+--- src/request/AgaviConsoleRequest.class.php	(revision 1841)
++++ src/request/AgaviConsoleRequest.class.php	(working copy)
+@@ -2,7 +2,8 @@
+ 
+ // +---------------------------------------------------------------------------+
+ // | This file is part of the Agavi package.                                   |
+-// | Copyright (c) 2003-2005 the Agavi Project.                                |
++// | Copyright (c) 2003-2007 the Agavi Project.                                |
++// | Based on the Mojavi3 MVC Framework, Copyright (c) 2003-2005 Sean Kerr.    |
+ // |                                                                           |
+ // | For the full copyright and license information, please view the LICENSE   |
+ // | file that was distributed with this source code. You can also view the    |
+@@ -14,21 +15,133 @@
+ // +---------------------------------------------------------------------------+
+ 
+ /**
+- * AgaviConsoleRequest provides support for console-only request information
+- * such as command-line parameters.
+- * 
++ * AgaviConsoleRequest provides additional support for commandline 
++ * parameter parsing
++ *
+  * @package    agavi
+  * @subpackage request
+  *
++ * @author     Sean Kerr <skerr@mojavi.org>
++ * @author     Veikko Mäkinen <mail@veikkomakinen.com>
++ * @author     David Zülke <dz@bitxtender.com>
++ * @author     Felix Gilcher <felix@andersground.net>
++ *
+  * @copyright  Authors
+  * @copyright  The Agavi Project
+  *
+- * @since      0.9.0
++ * @since      0.11.RC4
+  *
+  * @version    $Id$
+  */
+ class AgaviConsoleRequest extends AgaviRequest
+ {
++	/**
++     * the command passed to the cli script
++     */
++    private $command;
++    
++    /**
++     * the name the cli script was called with
++     */
++    private $scriptName;
++    
++    public function getCommand()
++    {
++        return $this->command;
++    }
++    
++	/**
++	 * Constructor.
++	 *
++	 * @author     David Zuelke <dz@bitxtender.com>
++	 * @since      0.11.0
++	 */
++	public function __construct()
++	{
++		parent::__construct();
++		$this->setParameters(array(
++			'request_data_holder_class' => 'AgaviRequestDataHolder',
++		));
++	}
++	
++
++	/**
++	 * Initialize this Request.
++	 *
++	 * @param      AgaviContext An AgaviContext instance.
++	 * @param      array        An associative array of initialization parameters.
++	 *
++	 * @throws     <b>AgaviInitializationException</b> If an error occurs while
++	 *                                                 initializing this Request.
++	 *
++	 * @author     Felix Gilcher <felix@andersground.net>
++	 * @since      0.11.RC4
++	 */
++	public function initialize(AgaviContext $context, array $parameters = array())
++	{
++		parent::initialize($context, $parameters);
++		
++		$this->setMethod('write');
++		
++		$argv = & $GLOBALS['argv'];
++		
++		$this->scriptName = $argv[0];
++				
++		if (isset($argv[1]))
++		{
++		    $this->command = $argv[1];
++		}
++		
++		$parameters = array();
++		
++		$i = 2; 
++		$argc = count($argv);
++		
++		while ($i < $argc)
++		{
++		    if (!empty($argv[$i + 1]) && '-' != $argv[$i + 1]{0})
++		    {
++		        $parameters[ltrim($argv[$i], '-')] = $argv[$i + 1];
++		        $i += 2;
++		    }
++		    else
++		    {
++		        $parameters[ltrim($argv[$i], '-')] = true;
++    		    ++$i;
++		    }
++		}
++		
++		if(!AgaviConfig::get('core.use_routing', false)) {
++			// routing disabled, set the module and action parameters manually and bail out
++			$module = strtok($this->getCommand(), '.');
++			$action = strtok('');
++			
++			$parameters[$this->getParameter('module_accessor')] = $module;
++			$parameters[$this->getParameter('action_accessor')] = $action;
++		}
++		
++		
++		$rdhc = $this->getParameter('request_data_holder_class');
++		$this->requestData = new $rdhc(array(
++			constant("$rdhc::SOURCE_PARAMETERS") => $parameters
++		));
++		
++	}
++	
++	/**
++	 * Do any necessary startup work after initialization.
++	 *
++	 * This method is not called directly after initialize().
++	 *
++	 * @author     David Zuelke <dz@bitxtender.com>
++	 * @since      0.11.0
++	 */
++	public function startup()
++	{
++		if($this->getParameter("unset_input", true)) {
++			unset($GLOBALS['argv']);
++		}
++	}
+ }
+ 
+ ?>
+\ No newline at end of file
+Index: src/response/AgaviConsoleResponse.class.php
+===================================================================
+--- src/response/AgaviConsoleResponse.class.php	(revision 0)
++++ src/response/AgaviConsoleResponse.class.php	(revision 0)
+@@ -0,0 +1,89 @@
++<?php
++
++// +---------------------------------------------------------------------------+
++// | This file is part of the Agavi package.                                   |
++// | Copyright (c) 2003-2007 the Agavi Project.                                |
++// |                                                                           |
++// | For the full copyright and license information, please view the LICENSE   |
++// | file that was distributed with this source code. You can also view the    |
++// | LICENSE file online at http://www.agavi.org/LICENSE.txt                   |
++// |   vi: set noexpandtab:                                                    |
++// |   Local Variables:                                                        |
++// |   indent-tabs-mode: t                                                     |
++// |   End:                                                                    |
++// +---------------------------------------------------------------------------+
++
++/**
++ * AgaviConsoleResponse handles console responses.
++ *
++ * @package    agavi
++ * @subpackage response
++ *
++ * @author     Felix Gilcher <felix@andersground.net>
++ * @copyright  Authors
++ * @copyright  The Agavi Project
++ *
++ * @since      0.11.RC4
++ *
++ * @version    $Id$
++ */
++class AgaviConsoleResponse extends AgaviResponse
++{
++	
++	
++	/**
++	 * Send all response data to the client.
++	 *
++	 * @param      AgaviOutputType An optional Output Type object with information
++	 *                             the response can use to send additional data,
++	 *                             such as HTTP headers
++	 *
++	 * @author     David Zülke <dz@bitxtender.com>
++	 * @since      0.11.0
++	 */
++	public function send(AgaviOutputType $outputType = null)
++	{
++	    $this->sendContent();
++	}
++	
++	/**
++	 * Clear all reponse data.
++	 *
++	 * @author     David Zülke <dz@bitxtender.com>
++	 * @since      0.11.0
++	 */
++	public function clear()
++	{
++		$this->clearContent();
++	}
++
++	
++	/**
++	 * Import response data from another response.
++	 *
++	 * @param      AgaviResponse The other response to import information from.
++	 *
++	 * @author     Felix Gilcher <felix@andersground.net>
++	 * @since      0.11.RC4
++	 */
++	public function merge(AgaviResponse $otherResponse)
++	{
++	}
++	
++
++	/**
++	 * Redirect externally.
++	 *
++	 * @param      mixed Where to redirect.
++	 *
++	 * @author     Felix Gilcher <felix@andersground.net>
++	 * @since      0.11.RC4
++	 */
++	public function setRedirect($to)
++	{
++		throw new BadMethodCallException('Redirects are not implemented for Console.');
++	}
++
++}
++
++?>
+\ No newline at end of file
+
+Property changes on: src/response/AgaviConsoleResponse.class.php
+___________________________________________________________________
+Name: svn:keywords
+   + Id
+
+Index: src/config/defaults/autoload.xml
+===================================================================
+--- src/config/defaults/autoload.xml	(revision 1841)
++++ src/config/defaults/autoload.xml	(working copy)
+@@ -156,6 +156,7 @@
+ 			<autoload name="AgaviResponse">%core.agavi_dir%/response/AgaviResponse.class.php</autoload>
+ 			<autoload name="AgaviWebResponse">%core.agavi_dir%/response/AgaviWebResponse.class.php</autoload>
+ 			<autoload name="AgaviXmlrpcepiphpResponse">%core.agavi_dir%/response/AgaviXmlrpcepiphpResponse.class.php</autoload>
++			<autoload name="AgaviConsoleResponse">%core.agavi_dir%/response/AgaviConsoleResponse.class.php</autoload>
+ 
+ 			<!-- agavi/routing -->
+ 			<autoload name="AgaviRouting">%core.agavi_dir%/routing/AgaviRouting.class.php</autoload>
+@@ -165,6 +166,8 @@
+ 			<autoload name="AgaviRoutingUserSource">%core.agavi_dir%/routing/AgaviRoutingUserSource.class.php</autoload>
+ 			<autoload name="AgaviWebRouting">%core.agavi_dir%/routing/AgaviWebRouting.class.php</autoload>
+ 			<autoload name="AgaviWebserviceRouting">%core.agavi_dir%/routing/AgaviWebserviceRouting.class.php</autoload>
++			<autoload name="AgaviConsoleRouting">%core.agavi_dir%/routing/AgaviConsoleRouting.class.php</autoload>
++			
+ 
+ 			<!-- agavi/storage -->
+ 			<autoload name="AgaviStorage">%core.agavi_dir%/storage/AgaviStorage.class.php</autoload>

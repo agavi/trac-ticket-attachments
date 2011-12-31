@@ -1,0 +1,16 @@
+( ! ) Fatal error: Cannot redeclare class AgaviILegacyConfigHandler in /zomglolkthxbai.com/libs/agavi/config/AgaviILegacyConfigHandler.interface.php on line 31
+Call Stack
+#	Time	Memory	Function	Location
+1	0.0005	55572	{main}( )	../index.php:0
+2	0.6880	7620604	AgaviController->dispatch( )	../index.php:28
+3	0.6954	7798744	AgaviFilterChain->execute( )	../zomglolkthxbai.com_app_config_compile.xml_development-ross_.php:648
+4	0.6955	7798744	FormPopulationFilter->executeOnce( )	../zomglolkthxbai.com_app_config_compile.xml_development-ross_.php:1539
+5	0.6955	7798744	AgaviFilterChain->execute( )	../FormPopulationFilter.class.php:90
+6	0.6956	7798744	AgaviFilter->executeOnce( )	../zomglolkthxbai.com_app_config_compile.xml_development-ross_.php:1539
+7	0.6956	7798744	AgaviDispatchFilter->execute( )	../zomglolkthxbai.com_app_config_compile.xml_development-ross_.php:1173
+8	0.6956	7798744	AgaviExecutionContainer->execute( )	../zomglolkthxbai.com_app_config_compile.xml_development-ross_.php:1184
+9	0.7016	7815920	AgaviExecutionFilter->execute( )	../zomglolkthxbai.com_app_config_compile.xml_development-ross_.php:937
+10	0.7020	7816256	AgaviConfigCache::checkConfig( )	../zomglolkthxbai.com_app_config_compile.xml_development-ross_.php:1301
+11	0.7025	7816256	AgaviConfigCache::callHandler( )	../AgaviConfigCache.class.php:164
+12	0.7025	7816256	AgaviConfigCache::loadConfigHandlers( )	../AgaviConfigCache.class.php:63
+13	0.7027	7821384	require( '/zomglolkthxbai.com/libs/agavi/config/AgaviILegacyConfigHandler.interface.php' )	../AgaviConfigCache.class.php:276

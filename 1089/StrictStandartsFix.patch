@@ -1,0 +1,22 @@
+Index: libs/agavi/config/util/xsl/AgaviXmlConfigXsltProcessor.class.php
+===================================================================
+--- libs/agavi/config/util/xsl/AgaviXmlConfigXsltProcessor.class.php	(revision 4027)
++++ libs/agavi/config/util/xsl/AgaviXmlConfigXsltProcessor.class.php	(working copy)
+@@ -37,7 +37,7 @@
+ 	 * @author     Noah Fontes <noah.fontes@bitextender.com>
+ 	 * @since      1.0.0
+ 	 */
+-	public function importStylesheet($stylesheet)
++	public function importStylesheet(DOMDocument $stylesheet)
+ 	{
+ 		$luie = libxml_use_internal_errors(true);
+ 		libxml_clear_errors();
+@@ -77,7 +77,7 @@
+ 	 * @author     David Z√ºlke <david.zuelke@bitextender.com>
+ 	 * @since      1.0.0
+ 	 */
+-	public function transformToDoc($doc)
++	public function transformToDoc(DOMNode $doc)
+ 	{
+ 		$luie = libxml_use_internal_errors(true);
+ 		libxml_clear_errors();

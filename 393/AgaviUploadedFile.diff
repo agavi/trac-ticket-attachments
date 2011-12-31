@@ -1,0 +1,29 @@
+Index: request/AgaviUploadedFile.class.php
+===================================================================
+--- request/AgaviUploadedFile.class.php	(revision 1569)
++++ request/AgaviUploadedFile.class.php	(working copy)
+@@ -97,7 +97,7 @@
+ 	}
+ 	
+ 	/**
+-	 * Move the uplaoded file.
++	 * Move the uploaded file.
+ 	 *
+ 	 * @param      string The destination filename.
+ 	 * @param      int    The mode of the destination file, default 0666.
+@@ -144,13 +144,13 @@
+ 				$error = sprintf($error, $directory);
+ 				throw new AgaviFileException($error);
+ 			}
+-			
+ 			if($this->is_uploaded_file) {
+ 				$moved = @move_uploaded_file($this->tmp_name, $dest);
+ 			} else {
++				if (is_readable($dest))
++					unlink($dest);
+ 				$moved = @rename($this->tmp_name, $dest);
+ 			}
+-			
+ 			if($moved) {
+ 				// chmod our file
+ 				if(!@chmod($dest, $fileMode)) {

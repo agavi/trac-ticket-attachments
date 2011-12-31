@@ -1,0 +1,47 @@
+Index: filter/AgaviFormPopulationFilter.class.php
+===================================================================
+--- filter/AgaviFormPopulationFilter.class.php	(revision 2108)
++++ filter/AgaviFormPopulationFilter.class.php	(working copy)
+@@ -379,11 +379,11 @@
+ 						}
+ 					}
+ 					// 1) insert error messages that are specific to this field
+-					if(!$this->insertErrorMessages($element, $fieldErrorMessageRules, $fieldIncidents)) {
++					if(!$this->insertErrorMessages($element, $fieldErrorMessageRules, $fieldIncidents, $cfg, $response)) {
+ 						$allIncidents = array_merge($allIncidents, $fieldIncidents);
+ 					}
+ 					// 2) insert error messages that belong to multiple fields (including this one), if that message was not inserted before
+-					if(!$this->insertErrorMessages($element, $multiFieldErrorMessageRules, $multiFieldIncidents)) {
++					if(!$this->insertErrorMessages($element, $multiFieldErrorMessageRules, $multiFieldIncidents, $cfg, $response)) {
+ 						$allIncidents = array_merge($allIncidents, $multiFieldIncidents);
+ 					}
+ 				}
+@@ -471,7 +471,7 @@
+ 			}
+ 
+ 			// now output the remaining incidents
+-			if(!$this->insertErrorMessages($form, $errorMessageRules, $allIncidents)) {
++			if(!$this->insertErrorMessages($form, $errorMessageRules, $allIncidents, $cfg, $response)) {
+ 				$rq->setAttribute('lolz', $allIncidents, 'org.agavi.filter.FormPopulationFilter');
+ 			}
+ 		}
+@@ -575,7 +575,7 @@
+ 	 * @author     David Zülke <dz@bitxtender.com>
+ 	 * @since      0.11.0
+ 	 */
+-	protected function insertErrorMessages(DOMElement $element, array $rules, array $incidents)
++	protected function insertErrorMessages(DOMElement $element, array $rules, array $incidents, array $cfg, AgaviResponse $response)
+ 	{
+ 		$errorMessages = array();
+ 		foreach($incidents as $incident) {
+@@ -590,8 +590,8 @@
+ 		$insertSuccessful = false;
+ 		foreach($rules as $this->xpathExpression => $errorMessageInfo) {
+ 			$targets = $this->xpath->query(AgaviToolkit::expandVariables($this->xpathExpression, array('htmlnsPrefix' => $this->ns)), $element);
+-			
+-			if(!$targets->length) {
++
++			if(!$targets || !$targets->length) {
+ 				continue;
+ 			}
+ 			

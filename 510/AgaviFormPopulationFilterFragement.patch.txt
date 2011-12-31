@@ -1,0 +1,16 @@
+Index: src/filter/AgaviFormPopulationFilter.class.php
+===================================================================
+--- src/filter/AgaviFormPopulationFilter.class.php	(Revision 1887)
++++ src/filter/AgaviFormPopulationFilter.class.php	(Arbeitskopie)
+@@ -215,6 +215,11 @@
+ 		foreach($xpath->query($query) as $form) {
+ 			if($populate instanceof AgaviParameterHolder) {
+ 				$action = trim($form->getAttribute('action'));
++				$fragment = parse_url($action, PHP_URL_FRAGMENT);
++				if (!empty($fragment))
++				{
++				    $action = str_replace('#'.$fragment, '', $action);
++				}
+ 				$ruri = $req->getRequestUri();
+ 				$rurl = $req->getUrl();
+ 				if(!(

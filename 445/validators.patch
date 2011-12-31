@@ -1,0 +1,48 @@
+Index: AgaviNotoperatorValidator.class.php
+===================================================================
+--- AgaviNotoperatorValidator.class.php	(revision 1743)
++++ AgaviNotoperatorValidator.class.php	(working copy)
+@@ -60,7 +60,9 @@
+ 	 */
+ 	protected function validate()
+ 	{
+-		$result = $this->children[0]->execute($this->validationParameters);
++		$children = $this->children;
++		$child = array_shift($children);
++		$result = $child->execute($this->validationParameters);
+ 		if($result == AgaviValidator::CRITICAL || $result == AgaviValidator::SUCCESS) {
+ 			$this->result = max(AgaviValidator::ERROR, $result);
+ 			$this->throwError();
+@@ -68,7 +70,7 @@
+ 		} else {
+ 			return true;
+ 		}
+-	}	
++	}
+ }
+ 
+ ?>
+\ No newline at end of file
+Index: AgaviXoroperatorValidator.class.php
+===================================================================
+--- AgaviXoroperatorValidator.class.php	(revision 1743)
++++ AgaviXoroperatorValidator.class.php	(working copy)
+@@ -61,13 +61,16 @@
+ 	 */
+ 	protected function validate()
+ 	{
+-		$result1 = $this->children[0]->execute($this->validationParameters);
++		$children = $this->children;
++		$child = array_shift($children);
++		$child1 = array_shift($children);
++		$result1 = $child->execute($this->validationParameters);
+ 		if($result1 == AgaviValidator::CRITICAL) {
+ 			$this->result = $result1;
+ 			$this->throwError();
+ 			return false;
+ 		}
+-		$result2 = $this->children[1]->execute($this->validationParameters);
++		$result2 = $child1->execute($this->validationParameters);
+ 		if($result2 == AgaviValidator::CRITICAL) {
+ 			$this->result = $result2;
+ 			$this->throwError();

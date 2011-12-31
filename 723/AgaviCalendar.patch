@@ -1,0 +1,114 @@
+Index: AgaviCalendar.class.php
+===================================================================
+--- AgaviCalendar.class.php	(revision 2467)
++++ AgaviCalendar.class.php	(working copy)
+@@ -387,8 +387,8 @@
+ 	{
+ 		if($amount == 0) {
+ 			return;   // Do nothing!
+-		}
+-
++		}
++
+ 		// We handle most fields in the same way.  The algorithm is to add
+ 		// a computed amount of millis to the current millis.  The only
+ 		// wrinkle is with DST -- for some fields, like the DAY_OF_MONTH,
+@@ -1860,10 +1860,11 @@
+ 
+ 		switch($field) {
+ 			case AgaviDateDefinitions::YEAR:
+-			case AgaviDateDefinitions::YEAR_WOY:
+ 			case AgaviDateDefinitions::EXTENDED_YEAR:
+ 				$this->set(AgaviDateDefinitions::DAY_OF_YEAR, $this->getGreatestMinimum(AgaviDateDefinitions::DAY_OF_YEAR));
+-				break;
++				break;
++			case AgaviDateDefinitions::YEAR_WOY: 
++				$this->set(AgaviDateDefinitions::WEEK_OF_YEAR, $this->getGreatestMinimum(AgaviDateDefinitions::WEEK_OF_YEAR)); 
+ 
+ 			case AgaviDateDefinitions::MONTH:
+ 				$this->set(AgaviDateDefinitions::DATE, $this->getGreatestMinimum(AgaviDateDefinitions::DATE));
+@@ -1957,7 +1958,23 @@
+ 			case AgaviDateDefinitions::DOW_LOCAL:
+ 			case AgaviDateDefinitions::JULIAN_DAY:
+ 			case AgaviDateDefinitions::MILLISECONDS_IN_DAY:
+-				return self::$kCalendarLimits[$field][$limitType];
++				return self::$kCalendarLimits[$field][$limitType];
++			case AgaviDateDefinitions::WEEK_OF_MONTH: {
++				if ($limitType == self::LIMIT_MINIMUM) {
++					$limit = $this->getMinimalDaysInFirstWeek() == 1 ? 1 : 0;
++				} else if ($limitType == self::LIMIT_GREATEST_MINIMUM) {
++					$limit = 1;
++				} else {
++					$minDaysInFirst = $this->getMinimalDaysInFirstWeek();
++					$daysInMonth = $this->handleGetLimit(AgaviDateDefinitions::DAY_OF_MONTH, $limitType);
++					if ($limitType == self::LIMIT_LEAST_MAXIMUM) {
++						$limit = ($daysInMonth + (7 - $minDaysInFirst)) / 7;
++					} else { // limitType == self::LIMIT_MAXIMUM
++						$limit = ($daysInMonth + 6 + (7 - $minDaysInFirst)) / 7;
++					}
++				}
++				return $limit;
++			}
+ 			default:
+ 				return $this->handleGetLimit($field, $limitType);
+ 		}
+@@ -2685,7 +2702,30 @@
+ 		$work = clone $this;
+ 		$work->setLenient(true);
+ 		$work->prepareGetActual($field, $delta < 0);
+-
++
++		// now try each value from the start to the end one by one until
++		// we get a value that normalizes to another value.  The last value that
++		// normalizes to itself is the actual maximum for the current date
++		$work->set($field, $startValue);
++
++		// prepareGetActual sets the first day of week in the same week with
++		// the first day of a month.  Unlike WEEK_OF_YEAR, week number for the
++		// week which contains days from both previous and current month is
++		// not unique.  For example, last several days in the previous month
++		// is week 5, and the rest of week is week 1.
++		$result = $startValue;
++
++		do {
++			$startValue += $delta;
++			$work->add($field, $delta);
++			if ($work->get($field, $status) != $startValue) {
++				break;
++			}
++			$result = $startValue;
++		} while ($startValue != $endValue);
++		return result;
++	}
++/*		
+ 		// now try each value from the start to the end one by one until
+ 		// we get a value that normalizes to another value.  The last value that
+ 		// normalizes to itself is the actual maximum for the current date
+@@ -2701,7 +2741,8 @@
+ 		} while($result != $endValue);
+ 
+ 		return $result;
+-	}
++	}
++*/
+ 
+ 	/**
+ 	 * @var        bool The flag which indicates if the current time is set in the
+@@ -3340,7 +3381,7 @@
+ 	private function computeWeekFields()
+ 	{
+ 		$eyear = $this->fFields[AgaviDateDefinitions::EXTENDED_YEAR];
+-		$year = $this->fFields[AgaviDateDefinitions::YEAR];
++		//$year = $this->fFields[AgaviDateDefinitions::YEAR];
+ 		$dayOfWeek = $this->fFields[AgaviDateDefinitions::DAY_OF_WEEK];
+ 		$dayOfYear = $this->fFields[AgaviDateDefinitions::DAY_OF_YEAR];
+ 
+@@ -3353,7 +3394,7 @@
+ 		// the previous year; days at the end of the year may fall into the
+ 		// first week of the next year.  ASSUME that the year length is less than
+ 		// 7000 days.
+-		$yearOfWeekOfYear = $year;
++		$yearOfWeekOfYear = $eyear;
+ 		$relDow = ($dayOfWeek + 7 - $this->getFirstDayOfWeek()) % 7; // 0..6
+ 		$relDowJan1 = ($dayOfWeek - $dayOfYear + 7001 - $this->getFirstDayOfWeek()) % 7; // 0..6
+ 		$woy = (int) (($dayOfYear - 1 + $relDowJan1) / 7); // 0..53

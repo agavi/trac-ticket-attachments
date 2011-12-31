@@ -1,0 +1,121 @@
+Index: test/run-tests.php
+===================================================================
+--- test/run-tests.php	(revision 4714)
++++ test/run-tests.php	(working copy)
+@@ -4,6 +4,8 @@
+ 
+ require('config.php');
+ 
++require_once('PHPUnit/Runner/Version.php');
++
+ $arguments = AgaviTesting::processCommandlineOptions(); 
+ 
+ if(isset($arguments['environment'])) {
+@@ -15,7 +17,11 @@
+ 
+ AgaviTesting::bootstrap($env);
+ 
+-PHPUnit_Util_Filter::addDirectoryToFilter(AgaviConfig::get('core.cache_dir'));
++if (version_compare(PHPUnit_Runner_Version::id(), '3.5', '>=')) {
++	PHP_CodeCoverage_Filter::getInstance()->addDirectoryToBlacklist(AgaviConfig::get('core.cache_dir'));
++} else {
++	PHPUnit_Util_Filter::addDirectoryToFilter(AgaviConfig::get('core.cache_dir'));
++}
+ 
+ AgaviTesting::dispatch($arguments);
+ 
+Index: src/testing/AgaviTesting.class.php
+===================================================================
+--- src/testing/AgaviTesting.class.php	(revision 4714)
++++ src/testing/AgaviTesting.class.php	(working copy)
+@@ -12,8 +12,11 @@
+ // |   indent-tabs-mode: t                                                     |
+ // |   End:                                                                    |
+ // +---------------------------------------------------------------------------+
++require_once('PHPUnit/Runner/Version.php');
++if (version_compare(PHPUnit_Runner_Version::id(), '3.5', '>=')) {
++	require_once('PHPUnit/Autoload.php');
++}
+ 
+-
+ /**
+  * Main framework class used for autoloading and initial bootstrapping of the 
+  * Agavi testing environment
+Index: src/testing/AgaviPhpUnitTestCase.class.php
+===================================================================
+--- src/testing/AgaviPhpUnitTestCase.class.php	(revision 4714)
++++ src/testing/AgaviPhpUnitTestCase.class.php	(working copy)
+@@ -172,13 +172,31 @@
+ 	/**
+ 	 * Performs custom preparations on the process isolation template.
+ 	 *
+-	 * @param        PHPUnit_Util_Template $template
++	 * @param        PHPUnit_Util_Template|Text_Template $template
+ 	 *
+ 	 * @author       Felix Gilcher <felix.gilcher@bitextender.com>
+ 	 * @since        1.0.2
+ 	*/
+-	protected function prepareTemplate(PHPUnit_Util_Template $template)
++	protected function prepareTemplate($template)
+ 	{
++		
++		if (version_compare(PHPUnit_Runner_Version::id(), '3.5', '>=')) {
++			if (!($template instanceof Text_Template)) {
++				if (!is_object($template))
++					trigger_error('Fatal error: Argument 1 must be an object of class Text_Template', E_USER_ERROR);
++				else
++					trigger_error('Fatal error: Argument 1 must be an instance of Text_Template', E_USER_ERROR);
++			} 
++		} else {
++			if (!($template instanceof PHPUnit_Util_Template)) {
++				if (!is_object($template))
++					trigger_error('Fatal error: Argument 1 must be an object of class PHPUnit_Util_Template', E_USER_ERROR);
++				else
++					trigger_error('Fatal error: Argument 1 must be an instance of PHPUnit_Util_Template', E_USER_ERROR);
++			} 
++			
++		}
++		
+ 		parent::prepareTemplate($template);
+ 		
+ 		$vars = array(
+Index: src/testing/templates/TestCaseMethod.tpl
+===================================================================
+--- src/testing/templates/TestCaseMethod.tpl	(revision 4714)
++++ src/testing/templates/TestCaseMethod.tpl	(working copy)
+@@ -41,7 +41,11 @@
+ 	AgaviConfig::set('core.default_context', '{agavi_default_context}');
+ }
+ 
+-require_once 'PHPUnit/Framework.php';
++require_once('PHPUnit/Runner/Version.php');
++if (version_compare(PHPUnit_Runner_Version::id(), '3.4', '<=')) {
++	require_once 'PHPUnit/Framework.php';
++}
++
+ require_once '{filename}';
+ 
+ 
+Index: samples/test/run-tests.php
+===================================================================
+--- samples/test/run-tests.php	(revision 4714)
++++ samples/test/run-tests.php	(working copy)
+@@ -15,9 +15,14 @@
+ 
+ AgaviTesting::bootstrap($env);
+ 
+-PHPUnit_Util_Filter::addDirectoryToFilter(AgaviConfig::get('core.cache_dir'));
+-PHPUnit_Util_Filter::addDirectoryToFilter(AgaviConfig::get('core.agavi_dir'));
+-
++require_once('PHPUnit/Runner/Version.php');
++if (version_compare(PHPUnit_Runner_Version::id(), '3.5', '>=')) {
++	PHP_CodeCoverage_Filter::getInstance()->addDirectoryToBlacklist(AgaviConfig::get('core.cache_dir'));
++	PHP_CodeCoverage_Filter::getInstance()->addDirectoryToBlacklist(AgaviConfig::get('core.agavi_dir'));
++} else {
++	PHPUnit_Util_Filter::addDirectoryToFilter(AgaviConfig::get('core.cache_dir'));
++	PHPUnit_Util_Filter::addDirectoryToFilter(AgaviConfig::get('core.agavi_dir'));
++}
+ AgaviTesting::dispatch($arguments);
+ 
+ ?>
+\ No newline at end of file

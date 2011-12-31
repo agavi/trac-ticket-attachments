@@ -1,0 +1,16 @@
+Index: src/translation/AgaviDateFormatter.class.php
+===================================================================
+--- src/translation/AgaviDateFormatter.class.php	(revision 1689)
++++ src/translation/AgaviDateFormatter.class.php	(working copy)
+@@ -115,8 +115,9 @@
+ 		}
+ 
+ 		if(is_int($message)) {
+-			$message = $this->context->getTranslationManager()->createCalendar($locale);
+-			$message->setUnixTimestamp($message);
++			$calendar = $this->context->getTranslationManager()->createCalendar($locale);
++			$calendar->setUnixTimestamp($message);
++			$message = $calendar;
+ 		} elseif(!($message instanceof AgaviCalendar)) {
+ 			// convert unix timestamp to calendar
+ 			$message = $this->context->getTranslationManager()->createCalendar($message);

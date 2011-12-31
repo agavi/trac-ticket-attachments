@@ -1,0 +1,61 @@
+diff --git a/libs/agavi/validator/AgaviBaseFileValidator.class.php b/libs/agavi/validator/AgaviBaseFileValidator.class.php
+index e170ae0..a2b8a74 100644
+--- a/libs/agavi/validator/AgaviBaseFileValidator.class.php
++++ b/libs/agavi/validator/AgaviBaseFileValidator.class.php
+@@ -67,6 +67,13 @@ abstract class AgaviBaseFileValidator extends AgaviValidator
+ 	 */
+ 	protected function validate()
+ 	{
++		// don't use mimetype sent by user if we have file info extension (default in php 5.3+)
++		$finfo = null ;
++		if ( function_exists ( 'finfo_open' ) and function_exists ( 'finfo_file' ) )
++		{
++			$finfo = finfo_open ( FILEINFO_MIME_TYPE );
++		}
++
+ 		foreach($this->getArguments() as $argument) {
+ 			$file = $this->getData($argument);
+ 			
+@@ -89,7 +96,34 @@ abstract class AgaviBaseFileValidator extends AgaviValidator
+ 				$this->throwError('max_size');
+ 				return false;
+ 			}
+-			
++
++			if ( $this->hasParameter('mime_type') )
++			{
++				// get mimetype and put it to $type
++				if ( !is_null ( $finfo ) )
++					$type = finfo_file ( $finfo, $file->getTmpName ( ) );
++				else
++					$type = $file->getType() ;
++
++				// check mimetype if we got type of file
++				if ( !empty ( $type ) )
++				{
++					$mime_type = $this->getParameter('mime_type') ;
++					// if parameter is a string use it as a pcre pattern
++					if ( is_string ( $mime_type ) and !preg_match ( $mime_type , $type ) )
++					{
++						$this->throwError('mime_type');
++						return false ;
++					}
++					// if parameter is an array search for mimetype in it
++					elseif ( is_array ( $mime_type ) and !in_array ( $type, $mime_type ) )
++					{
++						$this->throwError('mime_type');
++						return false ;
++					}
++				}
++			}
++
+ 			if($this->hasParameter('extension')) {
+ 				$fileinfo = pathinfo($file->getName()) + array('extension' => '');
+ 				
+@@ -112,5 +146,3 @@ abstract class AgaviBaseFileValidator extends AgaviValidator
+ 		return true;
+ 	}
+ }
+-
+-?>
+\ No newline at end of file

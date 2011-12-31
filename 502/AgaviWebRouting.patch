@@ -1,0 +1,12 @@
+Index: AgaviWebRouting.class.php
+===================================================================
+--- AgaviWebRouting.class.php	(revision 1875)
++++ AgaviWebRouting.class.php	(working copy)
+@@ -107,6 +107,7 @@
+ 		$rewritten = ($qs !== $ru['query']);
+ 		
+ 		if(AgaviConfig::get("core.use_routing", false) && $rewritten) {
++			$qs = ($qs != '') ? preg_replace('/\?/', '&', $_SERVER['REQUEST_URI'], 1) : $qs;
+ 			$this->input = preg_replace('/' . preg_quote('&' . $ru['query'], '/') . '$/D', '', $qs);
+ 			
+ 			if(!isset($_SERVER['SERVER_SOFTWARE']) || strpos($_SERVER['SERVER_SOFTWARE'], 'Apache') === false) {

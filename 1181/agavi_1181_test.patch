@@ -1,0 +1,79 @@
+Index: samples/app/config/settings.xml
+===================================================================
+--- samples/app/config/settings.xml	(Revision 4361)
++++ samples/app/config/settings.xml	(Arbeitskopie)
+@@ -42,7 +42,7 @@
+ 			<setting name="available">true</setting>
+ 			<setting name="debug">false</setting>
+ 			
+-			<setting name="use_database">false</setting>
++			<setting name="use_database">true</setting>
+ 			<setting name="use_logging">false</setting>
+ 			<setting name="use_security">true</setting>
+ 			<setting name="use_translation">true</setting>
+Index: samples/app/config/databases.xml
+===================================================================
+--- samples/app/config/databases.xml	(Revision 4361)
++++ samples/app/config/databases.xml	(Arbeitskopie)
+@@ -2,16 +2,57 @@
+ <ae:configurations xmlns:ae="http://agavi.org/agavi/config/global/envelope/1.0" xmlns="http://agavi.org/agavi/config/parts/databases/1.0">
+ 	
+ 	<ae:configuration>
+-		<databases default="pdo_mysql_main">
++		<databases default="propelom">
+ 			
+-			<database name="pdo_mysql_main" class="AgaviPdoDatabase">
++			<!-- <database name="pdo_mysql_main" class="AgaviPdoDatabase">
+ 				<ae:parameter name="dsn">mysql:host=localhost;dbname=agsmplapp</ae:parameter>
+ 				<ae:parameter name="username">root</ae:parameter>
+ 				<ae:parameter name="password"></ae:parameter>
+ 			</database>
+-			
++			 -->
++			<!-- <database name="propelom" class="AgaviPropelDatabase">
++				<ae:parameter name="config">%core.app_dir%/config/project-conf.php</ae:parameter>
++			</database> -->
++
++			<!-- <database name="propelom" class="AgaviPropelDatabase">
++				<ae:parameter name="config">/Users/dzuelke/Code/oss/propel/branches/1.3/generator/projects/bookstore/build/conf/bookstore-conf.php</ae:parameter>
++				<ae:parameter name="overrides">
++					<ae:parameter name="connection">
++						<ae:parameter name="dsn">foo:bar</ae:parameter>
++					</ae:parameter>
++					<ae:parameter name="classes">
++						<ae:parameter name="Zomg">Lol</ae:parameter>
++					</ae:parameter>
++				</ae:parameter>
++				<ae:parameter name="init_queries">
++					<ae:parameter>SELECT * FROM BAR</ae:parameter>
++				</ae:parameter>
++			</database> -->
++
++			<!-- <database name="propelom" class="AgaviPropelDatabase">
++				<ae:parameter name="config">/Users/dzuelke/Code/oss/propel/branches/1.3/generator/projects/bookstore/build/conf/bookstore-conf.php</ae:parameter>
++				<ae:parameter name="overrides">
++					<ae:parameter name="datasources.bookstore.connection.dsn">foo:bar</ae:parameter>
++					<ae:parameter name="datasources.bookstore.classes.Zomg">Lol</ae:parameter>
++					<ae:parameter name="datasources.bookstore.connection.settings.queries.query.2">DROP TABLE durr;</ae:parameter>
++					<ae:parameter name="datasources.bookstore.connection.attributes.ATTR_EMULATE_PREPARES.value">false</ae:parameter>
++				</ae:parameter>
++				<ae:parameter name="init_queries">
++					<ae:parameter>SELECT * FROM BAR</ae:parameter>
++				</ae:parameter>
++			</database> -->
++
+ 			<database name="propelom" class="AgaviPropelDatabase">
+-				<ae:parameter name="config">%core.app_dir%/config/project-conf.php</ae:parameter>
++				<ae:parameter name="config">/Users/dzuelke/Code/oss/propel/branches/1.4/test/fixtures/bookstore/build/conf/bookstore-conf.php</ae:parameter>
++				<ae:parameter name="overrides">
++					<ae:parameter name="datasources.bookstore.connection.dsn">foo:bar</ae:parameter>
++					<ae:parameter name="classmap.Zomg">Lol</ae:parameter>
++					<ae:parameter name="datasources.bookstore.connection.settings.queries.query.2">DROP TABLE durr;</ae:parameter>
++					<ae:parameter name="datasources.bookstore.connection.attributes.ATTR_EMULATE_PREPARES.value">false</ae:parameter>
++				</ae:parameter>
++				<ae:parameter name="init_queries">
++					<ae:parameter>SELECT * FROM BAR</ae:parameter>
++				</ae:parameter>
+ 			</database>
+ 
+ 		</databases>

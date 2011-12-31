@@ -1,0 +1,16 @@
+Index: src/util/AgaviDecimalFormatter.class.php
+===================================================================
+--- src/util/AgaviDecimalFormatter.class.php	(revision 1610)
++++ src/util/AgaviDecimalFormatter.class.php	(working copy)
+@@ -643,6 +643,11 @@
+ 				$num = $num * pow(10, $match['exp']);
+ 			}
+ 
++            if (!empty($match['sign']) && '-' == $match['sign'])
++            {
++                $num = $num * -1;
++            }
++            
+ 			return $num;
+ 		} else {
+ 			if(strlen($string) > 0) {

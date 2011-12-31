@@ -1,0 +1,45 @@
+Index: /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/config/routing.xml
+===================================================================
+--- /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/config/routing.xml	(revision 2304)
++++ /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/config/routing.xml	(working copy)
+@@ -22,7 +22,9 @@
+ 				</routes>
+ 			</route>
+ 			<route name="secure2" pattern="^/secure2" module="Default" action="Secure2" />
+-			<route name="secure" pattern="^/secure" module="Default" action="Secure1" />
++			<route name="secure" pattern="^/secure(/{zomg:(zomg|lol)})?" module="Default" action="Secure1" callback="TestCallback">
++				<default for="zomg">/{zomg}</default>
++			</route>
+ 			
+ 			<!-- This route uses a prefix and a postfix for a value, and the entire block is optional. That means that you can omit "buy-cheap-whatever-at-agavi-dot-org" from the URL, and the route still matches! If there is no value given for the parameter "name" when you enerate a route, the entire block will be missing. Since we specified a default value here, you have to explicitly set that parameter to 'null' when generating, so it gets skipped. -->
+ 			<route name="search_engine_spam" pattern="^/products(/buy-cheap-{name:[\S\s]+}-at-agavi-dot-org)?/(id:\d+)" module="Default" action="SearchEngineSpam">
+Index: /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/config/autoload.xml
+===================================================================
+--- /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/config/autoload.xml	(revision 2304)
++++ /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/config/autoload.xml	(working copy)
+@@ -3,6 +3,7 @@
+ 	<configuration>
+ 		<autoloads>
+ 			<autoload name="AgaviSampleAppLanguageRoutingCallback">%core.lib_dir%/routing/AgaviSampleAppLanguageRoutingCallback.class.php</autoload>
++			<autoload name="TestCallback">%core.lib_dir%/routing/AgaviSampleAppLanguageRoutingCallback.class.php</autoload>
+ 			
+ 			<autoload name="AgaviSampleAppUser">%core.lib_dir%/user/AgaviSampleAppUser.class.php</autoload>
+ 		</autoloads>
+Index: /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/lib/routing/AgaviSampleAppLanguageRoutingCallback.class.php
+===================================================================
+--- /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/lib/routing/AgaviSampleAppLanguageRoutingCallback.class.php	(revision 2304)
++++ /Users/dzuelke/Code/oss/agavi/branches/0.11/samples/app/lib/routing/AgaviSampleAppLanguageRoutingCallback.class.php	(working copy)
+@@ -1,5 +1,13 @@
+ <?php
+ 
++class TestCallback extends AgaviRoutingCallback {
++	public function onGenerate(array $defaultParameters, array &$userParameters, array &$userOptions) {
++		$userParameters['zomg'] = 'lol';
++		
++		return parent::onGenerate($defaultParameters, $userParameters, $userOptions);
++	}
++}
++
+ class AgaviSampleAppLanguageRoutingCallback extends AgaviRoutingCallback
+ {
+ 	protected $availableLocales = array();

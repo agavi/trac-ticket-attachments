@@ -1,0 +1,16 @@
+Index: libs/agavi/build/agavi/script/agavi.php
+===================================================================
+--- libs/agavi/build/agavi/script/agavi.php	(revision 4524)
++++ libs/agavi/build/agavi/script/agavi.php	(working copy)
+@@ -176,7 +176,10 @@
+ 
+ try {
+ 	$project = new Project();
+-	$project->setBasedir(BUILD_DIRECTORY);
++//	$project->setBasedir(BUILD_DIRECTORY);
++	// instead of setting a new Basedir, just adjust the include path!
++	// This does not break custom taskdef(initions) in project build.xml
++	set_include_path(BUILD_DIRECTORY.'/phing' . PATH_SEPARATOR . get_include_path());
+ 	
+ 	foreach($GLOBALS['PROPERTIES'] as $name => $value) {
+ 		$project->setUserProperty($name, $value);

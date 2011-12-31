@@ -1,0 +1,26 @@
+Index: response/AgaviWebResponse.class.php
+===================================================================
+--- response/AgaviWebResponse.class.php	(revision 2100)
++++ response/AgaviWebResponse.class.php	(working copy)
+@@ -462,6 +462,21 @@
+ 	}
+ 	
+ 	/**
++	 * Destroy a cookie.
++	 *
++	 * This method destroys a cookie by setting the value to null and the lifetime to zero
++	 *
++	 * @param      string The name of the cookie.
++	 *
++	 * @author     Ross Lawley <ross.lawley@gmail.com>
++	 * @since      0.11.0
++	 */
++	public function destroyCookie($name, $path = null, $domain = null, $secure = null, $httponly = null)
++	{
++		$this->setCookie($name, null, 0, $path, $domain, $secure, $httponly);
++	}
++	
++	/**
+ 	 * Get a list of cookies set for later sending.
+ 	 *
+ 	 * @return     array An associative array of cookie names (key) and cookie

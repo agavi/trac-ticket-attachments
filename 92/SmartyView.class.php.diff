@@ -1,0 +1,80 @@
+Index: src/view/SmartyView.class.php
+===================================================================
+--- src/view/SmartyView.class.php	(revision 414)
++++ src/view/SmartyView.class.php	(working copy)
+@@ -14,8 +14,6 @@
+ // |   End:                                                                    |
+ // +---------------------------------------------------------------------------+
+ 
+-require_once(AG_SMARTY_DIR.'/libs/Smarty.class.php');
+-
+ /**
+  *
+  * @package    agavi
+@@ -32,21 +30,49 @@
+ abstract class SmartyView extends View
+ {
+ 	const CACHE_SUBDIR = 'templates/smarty';
+-	
++
+ 	private static
+ 		$smarty = null;
+ 
+ 	public function initialize($context)
+ 	{
++
++		if (!class_exists('Smarty')) {
++
++			// let's see if we can find Smarty
++
++			// first see if SMARTY_DIR is defined in settings.ini
++			if (defined('AG_SMARTY_DIR') && is_readable(AG_SMARTY_DIR.'/Smarty.class.php')) {
++
++				require_once(AG_SMARTY_DIR.'/Smarty.class.php');
++
++			}
++
++			// then see if SMARTY_DIR constant is defined (e.g. in config.php)
++			elseif (defined('SMARTY_DIR') && is_readable(SMARTY_DIR.'/Smarty.class.php')) {
++
++				require_once(SMARTY_DIR.'/Smarty.class.php');
++
++			}
++
++			// resort to include_path and throw InitializationException if the file can't be found
++			elseif (@include_once('Smarty.class.php') == false) {
++
++				$msg = 'Unable to initialize SmartyView. Smarty class cannot be found.';
++				throw new InitializationException($msg);
++
++			}
++		}
++
+ 		$this->smarty = new Smarty();
+ 		$this->smarty->clear_all_assign();
+ 		$this->smarty->clear_config();
+ 		$this->smarty->config_dir   = AG_CONFIG_DIR;
+-		if(defined('SMARTY_CACHE_DIR')) {
+-			$this->smarty->cache_dir = SMARTY_CACHE_DIR;
++		if(defined('AG_SMARTY_CACHE_DIR')) {
++			$this->smarty->cache_dir = AG_SMARTY_CACHE_DIR;
+ 		} else {
+-			@mkdir(AG_CACHE_DIR. DIRECTORY_SEPARATOR . self::CACHE_SUBDIR . DIRECTORY_SEPARATOR . 'smarty');
+-			$this->smarty->cache_dir = AG_CACHE_DIR. DIRECTORY_SEPARATOR . self::CACHE_SUBDIR . DIRECTORY_SEPARATOR . 'smarty';
++			@mkdir(AG_CACHE_DIR . DIRECTORY_SEPARATOR . self::CACHE_SUBDIR );
++			$this->smarty->cache_dir = AG_CACHE_DIR . DIRECTORY_SEPARATOR . self::CACHE_SUBDIR ;
+ 		}
+ 		$this->smarty->plugins_dir  = array("plugins","plugins_local");
+ 
+@@ -126,7 +152,10 @@
+ 		$mode = $this->getContext()->getController()->getRenderMode();
+ 
+ 		$this->getEngine()->template_dir = $this->getDirectory();
+-		$this->getEngine()->compile_dir  = AG_SMARTY_CACHE_DIR;
++		if (defined('AG_SMARTY_COMPILE_DIR'))
++			$this->getEngine()->compile_dir  = AG_SMARTY_COMPILE_DIR;
++		else
++			$this->getEngine()->compile_dir = $this->getEngine()->cache_dir;
+ 
+ 		if ($mode == View::RENDER_CLIENT && !$this->isDecorator()) {
+ 			// render directly to the client

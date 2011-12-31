@@ -1,0 +1,22 @@
+--- AgaviDoctrineDatabase.class.php     2008-05-07 08:40:47.000000000 +0000
++++ AgaviDoctrineDatabase.class.php.new 2008-05-07 08:32:48.000000000 +0000
+@@ -92,7 +92,19 @@
+                        // we do
+                        spl_autoload_register(array('Doctrine', 'autoload'));
+                }
+-
++
++               // if model path is specified, register autoloading
++               if ($model_path = $parameters['model_path'])
++                       foreach ( ( is_array($model_path) ? $model_path : array($model_path) ) as $path) {
++                               try {
++                                       Doctrine::loadModels($path);
++                               }
++                               catch (UnexpectedValueException $e) {
++                                       throw new AgaviException(sprintf('Invalid model loading path %s (%s)', $path, $e->getMessage()));
++                               }
++                       }
++
++
+                // cool. Assign the Doctrine Manager instance
+                $this->doctrineManager = Doctrine_Manager::getInstance();

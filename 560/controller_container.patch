@@ -1,0 +1,70 @@
+Index: AgaviController.class.php
+===================================================================
+--- AgaviController.class.php	(revision 2061)
++++ AgaviController.class.php	(working copy)
+@@ -111,6 +111,19 @@
+ 	}
+ 	
+ 	/**
++	 * Returns the execution counter.
++	 *
++	 * @return     string                 The number of executions
++	 *
++	 * @author     Ross Lawley <ross.lawley@gmail.com>
++	 * @since      0.11.0
++	 */
++	public function getNumExecutions()
++	{
++		return $this->numExecutions;
++	}
++	
++	/**
+ 	 * Create and initialize new execution container instance.
+ 	 *
+ 	 * @param      string                 The name of the module.
+Index: AgaviExecutionContainer.class.php
+===================================================================
+--- AgaviExecutionContainer.class.php	(revision 2061)
++++ AgaviExecutionContainer.class.php	(working copy)
+@@ -101,6 +101,11 @@
+ 	protected $next = null;
+ 	
+ 	/**
++	 * @var        Is this the first AgaviExecutionContainer to be executed.
++	 */
++	protected $first = true;
++	
++	/**
+ 	 * Pre-serialization callback.
+ 	 *
+ 	 * Will set the name of the context instead of the instance, and the name of
+@@ -198,6 +203,9 @@
+ 		
+ 		$request = $this->context->getRequest();
+ 		
++		if ($controller->getNumExecutions() > 0) {
++			$this->first = false;
++		}
+ 		$controller->countExecution();
+ 		
+ 		$moduleName = $this->getModuleName();
+@@ -655,6 +663,19 @@
+ 	}
+ 	
+ 	/**
++	 * Check if this is the first AgaviExecutionContainer to be run.
++	 *
++	 * @return     bool True, if is first container.
++	 *
++	 * @author     Ross Lawley <ross.lawley@gmail.com>
++	 * @since      0.11.0
++	 */
++	public function isFirst()
++	{
++		return $this->first;
++	}
++	
++	/**
+ 	 * Get the "next" container.
+ 	 *
+ 	 * @return     AgaviExecutionContainer The "next" container, of null if unset.

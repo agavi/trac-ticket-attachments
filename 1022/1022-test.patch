@@ -1,0 +1,56 @@
+Index: samples/app/lib/validator/AgaviSampleAppProductValidator.class.php
+===================================================================
+--- samples/app/lib/validator/AgaviSampleAppProductValidator.class.php	(revision 3781)
++++ samples/app/lib/validator/AgaviSampleAppProductValidator.class.php	(working copy)
+@@ -13,6 +13,16 @@
+ 			$name = $this->getData($arguments['name']);
+ 			
+ 			$product = $this->getContext()->getModel('ProductFinder')->retrieveByIdAndName($id, $name);
++			if($product === null) {
++				// try and find the product *only* by id
++				$product = $this->getContext()->getModel('ProductFinder')->retrieveById($id);
++				if($product !== null) {
++					$this->export($product);
++					
++					$this->throwError('invalid_name');
++					return false;
++				}
++			}
+ 		} else {
+ 			$id = $this->getData($this->getArgument());
+ 			
+Index: samples/app/modules/Products/validate/Product/View.xml
+===================================================================
+--- samples/app/modules/Products/validate/Product/View.xml	(revision 3781)
++++ samples/app/modules/Products/validate/Product/View.xml	(working copy)
+@@ -23,13 +23,13 @@
+ 				</validator>
+ 			</validator>
+ 
+-			<validator class="AgaviSampleAppProductValidator" depends="name_given">
++			<validator name="product_with_id_and_name" class="AgaviSampleAppProductValidator" depends="name_given">
+ 				<argument name="id">id</argument>
+ 				<argument name="name">name</argument>
+ 				<ae:parameter name="export">product</ae:parameter>
+ 			</validator>
+ 
+-			<validator class="AgaviSampleAppProductValidator" depends="name_not_given">
++			<validator name="product_with_id" class="AgaviSampleAppProductValidator" depends="name_not_given">
+ 				<argument>id</argument>
+ 				<ae:parameter name="export">product</ae:parameter>
+ 			</validator>
+Index: samples/app/modules/Products/views/Product/ViewErrorView.class.php
+===================================================================
+--- samples/app/modules/Products/views/Product/ViewErrorView.class.php	(revision 3781)
++++ samples/app/modules/Products/views/Product/ViewErrorView.class.php	(working copy)
+@@ -8,6 +8,10 @@
+ 	 */
+ 	public function executeHtml(AgaviRequestDataHolder $rd)
+ 	{
++		var_dump($rd->getParameter('product'));
++		var_dump($this->getContainer()->getValidationManager()->getReport()->createQuery()->byValidator('product_with_id_and_name')->byArgument('name')->byErrorName('invalid_name')->has());
++		die();
++		
+ 		return $this->createForwardContainer(AgaviConfig::get('actions.error_404_module'), AgaviConfig::get('actions.error_404_action'));
+ 	}
+ 

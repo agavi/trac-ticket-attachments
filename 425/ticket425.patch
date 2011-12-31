@@ -1,0 +1,33 @@
+Index: src/response/AgaviWebResponse.class.php
+===================================================================
+--- src/response/AgaviWebResponse.class.php	(revision 1696)
++++ src/response/AgaviWebResponse.class.php	(working copy)
+@@ -115,7 +115,7 @@
+ 		
+ 		$this->cookieConfig = array(
+ 			'lifetime' => isset($parameters['cookie_lifetime']) ? $parameters['cookie_lifetime'] : 0,
+-			'path'     => isset($parameters['cookie_path'])     ? $parameters['cookie_path']     : "/",
++			'path'     => isset($parameters['cookie_path'])     ? $parameters['cookie_path']     : null,
+ 			'domain'   => isset($parameters['cookie_domain'])   ? $parameters['cookie_domain']   : "",
+ 			'secure'   => isset($parameters['cookie_secure'])   ? $parameters['cookie_secure']   : false,
+ 			'httpOnly' => isset($parameters['cookie_httponly']) ? $parameters['cookie_httponly'] : false
+@@ -527,6 +527,8 @@
+ 			}
+ 		}
+ 		
++		$routing = $this->context->getRouting();
++		
+ 		// send cookies
+ 		foreach($this->cookies as $name => $values) {
+ 			if(is_string($values['lifetime'])) {
+@@ -541,6 +543,10 @@
+ 				$expire = time() - 3600 * 24;
+ 			}
+ 			
++			if($values['path'] === null) {
++				$values['path'] = $routing->getBasePath();
++			}
++			
+ 			if(version_compare(phpversion(), '5.2', 'ge')) {
+ 				setcookie($name, $values['value'], $expire, $values['path'], $values['domain'], $values['secure'], $values['httpOnly']);
+ 			} else {

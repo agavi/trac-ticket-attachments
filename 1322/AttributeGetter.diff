@@ -1,0 +1,13 @@
+Index: trunk/src/build/templates/code/models/AttributeGetter.tmpl
+===================================================================
+--- trunk/src/build/templates/code/models/AttributeGetter.tmpl	(revision 4587)
++++ trunk/src/build/templates/code/models/AttributeGetter.tmpl	(working copy)
+@@ -4,7 +4,7 @@
+ 	 *
+ 	 * @return       %%TYPE%% the value for %%VARNAME%%
+ 	 */
+-	public function %%METHODNAME%%(%%VARIABLE%%)
++	public function %%METHODNAME%%()
+ 	{
+ 		return $this->%%VARNAME%%;
+ 	}

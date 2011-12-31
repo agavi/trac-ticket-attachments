@@ -1,0 +1,30 @@
+Index: 0.11/src/storage/AgaviPdoSessionStorage.class.php
+===================================================================
+--- 0.11/src/storage/AgaviPdoSessionStorage.class.php	(revision 2205)
++++ 0.11/src/storage/AgaviPdoSessionStorage.class.php	(working copy)
+@@ -170,10 +170,16 @@
+ 		// get table/column
+ 		$db_table    = $this->getParameter('db_table');
+ 		$db_time_col = $this->getParameter('db_time_col', 'sess_time');
++
++		$formattedDate = date($this->getParameter('date_format', 'U'), $time)
+ 
+ 		// delete the records that are expired
+-		$sql = sprintf('DELETE FROM %s  WHERE %s < %d', $db_table, $db_time_col, date($this->getParameter('date_format', 'U'), $time));
+-
++		if(is_int($formattedDate)) {
++			$sql = sprintf('DELETE FROM %s  WHERE %s < %s', $db_table, $db_time_col, $formattedDate);
++		} else {
++			$sql = sprintf('DELETE FROM %s  WHERE %s < \'%s\'', $db_table, $db_time_col, $formattedDate);
++		}
++		
+ 		try {
+ 			$this->connection->exec($sql);
+ 			return true;
+@@ -342,4 +348,4 @@
+ 	}
+ }
+ 
+-?>
+\ No newline at end of file
++?>

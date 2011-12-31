@@ -1,0 +1,33 @@
+Index: filter/AgaviExecutionFilter.class.php
+===================================================================
+--- filter/AgaviExecutionFilter.class.php	(revision 2139)
++++ filter/AgaviExecutionFilter.class.php	(working copy)
+@@ -252,6 +252,8 @@
+ 
+ 		$request = $this->context->getRequest();
+ 
++		$outputType = $container->getOutputType()->getName();
++
+ 		$isCacheable = false;
+ 		if($this->getParameter('enable_caching', true) && is_readable($cachingDotXml = AgaviConfig::get('core.module_dir') . '/' . $moduleName . DIRECTORY_SEPARATOR . 'cache' . DIRECTORY_SEPARATOR . $actionName . '.xml')) {
+ 			// $lm->log('Caching enabled, configuration file found, loading...');
+@@ -259,9 +261,17 @@
+ 			include(AgaviConfigCache::checkConfig($cachingDotXml));
+ 		}
+ 
++		// Ensure that the output type is in the to be cached list - if not run the action
++		// which may change the output type - but ensures data is available to output types
++		// that are never cached!
++		$checkActionCache = true;
++		if (isset($config) && !isset($config['output_types'][$outputType]) && !isset($config['output_types']['*'])) {
++			// $lm->log('Output type is not in the caching list!');
++			$checkActionCache = false;
++		}
++
+ 		$isActionCached = false;
+-
+-		if($isCacheable) {
++		if($isCacheable && $checkActionCache) {
+ 			$groups = $this->determineGroups($config["groups"], $container);
+ 			$isActionCached = $this->checkCache(array_merge($groups, array(self::ACTION_CACHE_ID)), $config['lifetime']);
+ 		} else {
